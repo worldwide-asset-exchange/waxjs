@@ -8,13 +8,15 @@
     "prettier": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "mocha -r ts-node/register test/**/*.test.ts",
-    "docs": "typedoc --out docs src"
+    "docs": "typedoc --out docs src",
+    "serve": "serve -s dist-web"
   },
   "author": "keyboard-warriors",
   "license": "ISC",
   "devDependencies": {
     "@types/chai": "^4.2.3",
     "@types/mocha": "^5.2.7",
+    "@types/node": "^12.7.5",
     "chai": "^4.2.0",
     "mocha": "^6.2.0",
     "prettier": "^1.18.2",
@@ -25,7 +27,8 @@
     "typedoc": "^0.15.0",
     "typescript": "^3.6.3",
     "webpack": "^4.40.2",
-    "webpack-cli": "^3.3.9"
+    "webpack-cli": "^3.3.9",
+    "serve": "^11.1.0"
   },
   "dependencies": {}
 }

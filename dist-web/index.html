@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<script src='waxjs.js'></script>
+
+<body>
+
+<h1>wax signing lib example</h1>
+
+<p>this is a test.</p>
+
+<p>Click the button</p>
+<button id="login" onclick=login() >WAX Login</button>
+
+<h2 id="userAccount"></h2>
+
+
+<p id="demo"></p>
+
+
+<script>
+  const wax = new waxjs.WaxJS('http://localhost:5000');
+
+  async function login() {
+    let userAccount = await wax.login();
+    document.getElementById('userAccount').append(userAccount)
+  }
+
+</script>
+</body>
+</html>

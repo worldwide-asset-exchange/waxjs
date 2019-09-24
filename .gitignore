@@ -2,4 +2,5 @@ node_modules/
 lib/
 .idea/
 dist-web/
+!dist-web/index.html
 docs/

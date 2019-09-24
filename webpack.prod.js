@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
     entry: {
-        example: './src/index.ts',
+        waxjs: './src/index.ts',
     },
     mode: 'production',
     module: {
