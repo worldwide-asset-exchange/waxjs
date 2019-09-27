@@ -4,14 +4,16 @@
 
 <body>
 
-<h1>wax signing lib example</h1>
+<h1>wax signing lib example.</h1>
 
-<p>this is a test.</p>
+<p>this is a library test.</p>
 
-<p>Click the button</p>
+<p>Click the buttons</p>
+
 <button id="login" onclick=login() >WAX Login</button>
+<button id="sign" onclick=sign() >Sing transaction</button>
 
-<h2 id="userAccount"></h2>
+<h2 id="response"></h2>
 
 
 <p id="demo"></p>
@@ -22,7 +24,13 @@
 
   async function login() {
     let userAccount = await wax.login();
-    document.getElementById('userAccount').append(userAccount)
+    document.getElementById('response').append(userAccount)
+  }
+
+  async function sign() {
+    let transaction =  {"delay_sec":0,"actions":[{"account":"eosio","name":"newaccount","data":{"creator":"user1.wam","name":"user2","owner":"EOS6W4b3pmd86SpfyDJxuASDVaCc2sT5H1Qt7skA15viHw4huGMHW","active":"EOS6W4b3pmd86SpfyDJxuASDVaCc2sT5H1Qt7skA15viHw4huGMHW"},"authorization":[{"actor":"user1.wam","permission":"active"}]}]};
+    let signedTransaction = await wax.signing(transaction);
+    document.getElementById('response').append(signedTransaction)
   }
 
 </script>
