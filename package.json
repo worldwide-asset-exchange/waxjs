@@ -8,7 +8,7 @@
     "prettier": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "mocha -r ts-node/register test/**/*.test.ts",
-    "docs": "typedoc --out docs src",
+    "docs": "typedoc --excludePrivate --exclude src/waxEventSource.ts --out docs src",
     "serve": "serve -s dist-web"
   },
   "author": "keyboard-warriors",
