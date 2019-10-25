@@ -10,3 +10,4 @@ FEATURES:
 IMPROVEMENTS:
 
 BUG FIXES:
+- [] Fix multiple signatures

@@ -36,12 +36,12 @@ export class WaxJS {
 
     const signTransaction = async (event: any) => {
       if (event.data.type === "TX_SIGNED") {
-        const { verified, signature } = event.data;
-        if (!verified || signature == null) {
+        const { verified, signatures } = event.data;
+        if (!verified || signatures == null) {
           throw new Error("User denied to sign transaction");
         }
 
-        return signature;
+        return signatures;
       }
     };
 
