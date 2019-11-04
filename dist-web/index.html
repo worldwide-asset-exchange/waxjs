@@ -11,7 +11,7 @@
 <p>Click the buttons</p>
 
 <button id="login" onclick=login() >WAX Login</button>
-<button id="sign" onclick=sign() >Sing transaction</button>
+<button id="sign" onclick=sign() >Sign transaction</button>
 
 <h2 id="response"></h2>
 
@@ -20,17 +20,40 @@
 
 
 <script>
-  const wax = new waxjs.WaxJS('http://localhost:3000');
+  const wax = new waxjs.WaxJS('http://shared.wax.io', 'https://history.waxprotocol.com');
+
+  let userName;
+  let eosApi;
 
   async function login() {
-    let userAccount = await wax.login();
-    document.getElementById('response').append(userAccount)
+    let { userAccount, api } = await wax.login();
+    userName = userAccount;
+    eosApi = api;
+    document.getElementById('response').append(userAccount);
   }
 
   async function sign() {
-    let transaction =  {"delay_sec":0,"actions":[{"account":"eosio","name":"newaccount","data":{"creator":"user1.wam","name":"user2","owner":"EOS6W4b3pmd86SpfyDJxuASDVaCc2sT5H1Qt7skA15viHw4huGMHW","active":"EOS6W4b3pmd86SpfyDJxuASDVaCc2sT5H1Qt7skA15viHw4huGMHW"},"authorization":[{"actor":"user1.wam","permission":"active"}]}]};
-    let signedTransaction = await wax.signing(transaction);
-    document.getElementById('response').append(signedTransaction)
+    const result = await eosApi.transact({
+      actions: [{
+        account: 'eosio.token',
+        name: 'transfer',
+        authorization: [{
+          actor: userName,
+          permission: 'active',
+        }],
+        data: {
+          from: userName,
+          to: 'nv2qm.waa',
+          quantity: '1.00000000 WAX',
+          memo: '',
+        },
+      }]
+    }, {
+      blocksBehind: 3,
+      expireSeconds: 30
+    });
+
+    document.getElementById('response').append(JSON.stringify(result))
   }
 
 </script>

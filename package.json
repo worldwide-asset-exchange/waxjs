@@ -30,5 +30,7 @@
     "webpack-cli": "^3.3.9",
     "serve": "^11.1.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "eosjs": "^20.0.0"
+  }
 }
