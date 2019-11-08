@@ -6,7 +6,7 @@ Javascript API for integration with the WAX Cloud Wallet.
 
 ### Browser
 
-Grab the waxjs.js minified bundle in the dist-web folder of this repo, or build it yourself (see below). [Check the example code](https://github.com/worldwide-asset-exchange/waxjs/dist-web/index.html) to see how to use it.
+Grab the waxjs.js minified bundle in the dist-web folder of this repo, or build it yourself (see below). [Check the example code](https://github.com/worldwide-asset-exchange/waxjs/blob/develop/dist-web/index.html) to see how to use it.
 
 ## Usage
 
