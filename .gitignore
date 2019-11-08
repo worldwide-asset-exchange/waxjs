@@ -3,4 +3,5 @@ lib/
 .idea/
 dist-web/
 !dist-web/index.html
+!dist-web/waxjs.js
 docs/

@@ -20,40 +20,47 @@
 
 
 <script>
-  const wax = new waxjs.WaxJS('http://shared.wax.io', 'https://history.waxprotocol.com');
-
-  let userName;
-  let eosApi;
+  const wax = new waxjs.WaxJS('https://wax.greymass.com');
 
   async function login() {
-    let { userAccount, api } = await wax.login();
-    userName = userAccount;
-    eosApi = api;
-    document.getElementById('response').append(userAccount);
+    try {
+      const userAccount = await wax.login();
+      document.getElementById('response').append(userAccount);
+    } catch(e) {
+      document.getElementById('response').append(e.message);
+    }
   }
 
   async function sign() {
-    const result = await eosApi.transact({
-      actions: [{
-        account: 'eosio.token',
-        name: 'transfer',
-        authorization: [{
-          actor: userName,
-          permission: 'active',
-        }],
-        data: {
-          from: userName,
-          to: 'nv2qm.waa',
-          quantity: '1.00000000 WAX',
-          memo: '',
-        },
-      }]
-    }, {
-      blocksBehind: 3,
-      expireSeconds: 30
-    });
+    if(!wax.api) {
+      return document.getElementById('response').append('* Login first *');
+    }
 
-    document.getElementById('response').append(JSON.stringify(result))
+    try {
+      const result = await wax.api.transact({
+        actions: [{
+          account: 'eosio',
+          name: 'delegatebw',
+          authorization: [{
+            actor: wax.userAccount,
+            permission: 'active',
+          }],
+          data: {
+            from: wax.userAccount,
+            receiver: wax.userAccount,
+            stake_net_quantity: '0.00000001 WAX',
+            stake_cpu_quantity: '0.00000000 WAX',
+            transfer: false,
+          },
+        }]
+      }, {
+        blocksBehind: 3,
+        expireSeconds: 30
+      });
+      document.getElementById('response').append(JSON.stringify(result))
+    } catch(e) {
+      document.getElementById('response').append(e.message);
+    }
   }
 
 </script>
