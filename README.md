@@ -11,13 +11,13 @@ Grab the waxjs.js minified bundle in the dist-web folder of this repo, or build 
 ### NPM
 
 ```bash
-npm install waxjs
+npm install @waxio/waxjs
 ```
 
 ### YARN
 
 ```bash
-yarn add waxjs
+yarn add @waxio/waxjs
 ```
 
 ## Usage

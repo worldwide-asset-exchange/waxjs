@@ -1,5 +1,5 @@
 {
-  "name": "waxjs",
+  "name": "@waxio/waxjs",
   "version": "0.0.1",
   "description": "Javascript API for integration with the WAX Cloud Wallet.",
   "scripts": {
