@@ -8,7 +8,27 @@ Javascript API for integration with the WAX Cloud Wallet.
 
 Grab the waxjs.js minified bundle in the dist-web folder of this repo, or build it yourself (see below). [Check the example code](https://github.com/worldwide-asset-exchange/waxjs/blob/develop/dist-web/index.html) to see how to use it.
 
+### NPM
+
+```bash
+npm install @waxio/waxjs
+```
+
+### YARN
+
+```bash
+yarn add @waxio/waxjs
+```
+
 ## Usage
+
+### 0. Import (for NPM and Yarn installations)
+
+React style apps using npm or yarn can import the library via:
+
+```js
+import * as waxjs from "@waxio/waxjs/dist";
+```
 
 ### 1. Instantiate
 
@@ -74,7 +94,3 @@ const result = await wax.api.transact({
 ### Build for web 
 
 ``` npm run build-web```
-
-## Upcoming
-
-* Installation via npm and yarn
