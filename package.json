@@ -17,6 +17,7 @@
     "postversion": "git push && git push --tags"
   },
   "author": "keyboard-warriors",
+  "homepage": "https://github.com/worldwide-asset-exchange/waxjs#readme",
   "license": "ISC",
   "devDependencies": {
     "@types/chai": "^4.2.3",
