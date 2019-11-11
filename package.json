@@ -16,7 +16,7 @@
     "version": "npm run prettier && git add -A src",
     "postversion": "git push && git push --tags"
   },
-  "author": "keyboard-warriors",
+  "author": "WAX",
   "homepage": "https://github.com/worldwide-asset-exchange/waxjs#readme",
   "license": "ISC",
   "devDependencies": {

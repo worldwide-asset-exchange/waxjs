@@ -17,7 +17,7 @@ npm install waxjs
 ### YARN
 
 ```bash
-yarn add eosjs
+yarn add waxjs
 ```
 
 ## Usage
