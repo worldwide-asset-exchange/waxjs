@@ -10,6 +10,7 @@ FEATURES:
 - [KEW-1701] docs
 
 IMPROVEMENTS:
+- [KEW-1716] npom and yarn installation
 
 BUG FIXES:
 - [] Fix multiple signatures

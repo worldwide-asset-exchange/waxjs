@@ -22,6 +22,14 @@ yarn add @waxio/waxjs
 
 ## Usage
 
+### 0. Import (for NPM and Yarn installations)
+
+React style apps using npm or yarn can import the library via:
+
+```js
+import * as waxjs from "@waxio/waxjs/dist";
+```
+
 ### 1. Instantiate
 
 Instantiate the waxjs object with the RPC server you wish to connect to.
