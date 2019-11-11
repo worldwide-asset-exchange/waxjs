@@ -1,15 +1,20 @@
 {
-  "name": "wax-signing-lib",
+  "name": "waxjs",
   "version": "0.0.1",
-  "description": "",
+  "description": "Javascript API for integration with the WAX Cloud Wallet.",
   "scripts": {
     "build": "tsc",
     "build-web": "webpack --config webpack.prod.js",
     "prettier": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
-    "test": "mocha -r ts-node/register test/**/*.test.ts",
+    "test": "npm run lint && mocha -r ts-node/register test/**/*.test.ts",
     "docs": "typedoc --excludePrivate --exclude src/waxEventSource.ts --out docs src",
-    "serve": "serve -s dist-web"
+    "serve": "serve -s dist-web",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run prettier && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "author": "keyboard-warriors",
   "license": "ISC",
@@ -32,5 +37,8 @@
   },
   "dependencies": {
     "eosjs": "^20.0.0"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

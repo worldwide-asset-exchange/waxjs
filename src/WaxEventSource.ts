@@ -5,7 +5,7 @@ export class WaxEventSource {
   }
 
   public async openEventSource(url: string, message?: any): Promise<any> {
-    let openedWindow = await window.open(url, "_blank");
+    const openedWindow = await window.open(url, "_blank");
 
     if (typeof message === "undefined") {
       return openedWindow;

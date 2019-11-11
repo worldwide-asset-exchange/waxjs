@@ -1,5 +1,5 @@
-import { WaxEventSource } from "./WaxEventSource";
 import { Api, JsonRpc, RpcError } from "eosjs";
+import { WaxEventSource } from "./WaxEventSource";
 
 export class WaxJS {
   private waxEventSource: WaxEventSource;
@@ -17,12 +17,12 @@ export class WaxJS {
   }
 
   public async login() {
-    let confirmationWindow = await this.waxEventSource.openEventSource(
+    const confirmationWindow = await this.waxEventSource.openEventSource(
       this.waxSigningURL + "/cloud-wallet/login/"
     );
 
     const receiveMessage = async (event: any) => {
-      let { verified, userAccount, pubKeys } = event.data;
+      const { verified, userAccount, pubKeys } = event.data;
       if (!verified) {
         throw new Error("User declined to share their user account");
       }
@@ -58,7 +58,7 @@ export class WaxJS {
   }
 
   private async signing(transaction: any) {
-    let confirmationWindow: Window = await this.waxEventSource.openEventSource(
+    const confirmationWindow: Window = await this.waxEventSource.openEventSource(
       this.waxSigningURL + "/cloud-wallet/signing/",
       { type: "TRANSACTION", transaction }
     );

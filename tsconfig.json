@@ -3,12 +3,12 @@
     "target": "es2015",
     "module": "commonjs",
     "declaration": true,
-    "outDir": "./lib",
+    "outDir": "./dist",
     "strict": false
   },
   "include": [
        "src/**/*.ts" ,
-       "src/**/*.js" ,
+       "src/**/*.js"
     ], 
   "exclude": ["node_modules", "**/__tests__/*"]
 }
