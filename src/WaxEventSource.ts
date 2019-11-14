@@ -47,6 +47,10 @@ export class WaxEventSource {
             return;
           }
 
+          if (typeof event.data !== 'object') {
+            return;
+          }
+
           try {
             const result: any = await action(event);
             resolve(result);
