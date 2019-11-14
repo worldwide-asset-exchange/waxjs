@@ -14,3 +14,4 @@ IMPROVEMENTS:
 
 BUG FIXES:
 - [] Fix multiple signatures
+- [KEW-1726] Login not working on firefox
