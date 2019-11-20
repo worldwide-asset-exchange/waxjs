@@ -53,6 +53,11 @@ export class WaxJS {
       this.api = new Api({ rpc: this.rpc, signatureProvider: signer });
       const transact = this.api.transact.bind(this.api);
       const url = this.waxSigningURL + "/cloud-wallet/signing/";
+      // We monkeypatch the transact method to overcome timeouts
+      // firing the pop-up which some browsers enforce, such as Safari.
+      // By pre-creating the pop-up window we will interact with,
+      // we ensure that it is not going to be rejected due to a delayed
+      // pop up that would otherwise occur post transaction creation
       this.api.transact = async (...args) => {
         this.signingWindow = await window.open(url, "_blank");
         return await transact(...args);
