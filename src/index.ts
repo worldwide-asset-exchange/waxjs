@@ -7,6 +7,7 @@ export class WaxJS {
   private api: Api;
   private userAccount: string;
   private pubKeys: string[];
+  private signingWindow: Window;
 
   constructor(
     rcpEndpoint: string,
@@ -41,12 +42,22 @@ export class WaxJS {
         sign: async (data: any) => {
           return {
             serializedTransaction: data.serializedTransaction,
-            signatures: await this.signing(data.serializedTransaction)
+            signatures: await this.signing(
+              this.signingWindow,
+              data.serializedTransaction
+            )
           };
         }
       };
       // @ts-ignore
       this.api = new Api({ rpc: this.rpc, signatureProvider: signer });
+      const transact = this.api.transact.bind(this.api);
+      const url = this.waxSigningURL + "/cloud-wallet/signing/";
+      this.api.transact = async (...args) => {
+        this.signingWindow = await window.open(url, "_blank");
+        return await transact(...args);
+      };
+
       return this.userAccount;
     };
 
@@ -57,10 +68,11 @@ export class WaxJS {
     );
   }
 
-  private async signing(transaction: any) {
+  private async signing(window: Window, transaction: any) {
     const confirmationWindow: Window = await this.waxEventSource.openEventSource(
       this.waxSigningURL + "/cloud-wallet/signing/",
-      { type: "TRANSACTION", transaction }
+      { type: "TRANSACTION", transaction },
+      window
     );
 
     const signTransaction = async (event: any) => {
