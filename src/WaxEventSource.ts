@@ -4,8 +4,16 @@ export class WaxEventSource {
     this.onceEvent = this.onceEvent.bind(this);
   }
 
-  public async openEventSource(url: string, message?: any): Promise<any> {
-    const openedWindow = await window.open(url, "_blank");
+  public async openEventSource(
+    url: string,
+    message?: any,
+    win?: Window
+  ): Promise<any> {
+    const openedWindow = win ? win : await window.open(url, "_blank");
+
+    if (!openedWindow) {
+      throw new Error("Unable to open a popup window");
+    }
 
     if (typeof message === "undefined") {
       return openedWindow;
@@ -18,12 +26,20 @@ export class WaxEventSource {
       }
     };
 
-    await this.onceEvent(
+    let eventPromise = this.onceEvent(
       // @ts-ignore
       openedWindow,
       this.waxSigningURL,
       postTransaction
     );
+
+    await Promise.race([eventPromise, this.timeout()]).catch(err => {
+      if (err.message !== "Timeout") {
+        throw err;
+      }
+
+      openedWindow.postMessage(message, this.waxSigningURL);
+    });
 
     return openedWindow;
   }
@@ -47,7 +63,7 @@ export class WaxEventSource {
             return;
           }
 
-          if (typeof event.data !== 'object') {
+          if (typeof event.data !== "object") {
             return;
           }
 
@@ -64,4 +80,13 @@ export class WaxEventSource {
       );
     });
   }
+
+  private timeout = function() {
+    return new Promise((resolve, reject) => {
+      let wait = setTimeout(() => {
+        clearTimeout(wait);
+        reject(new Error("Timeout"));
+      }, 2000);
+    });
+  };
 }
