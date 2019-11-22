@@ -9,6 +9,16 @@ FEATURES:
 IMPROVEMENTS:
 
 BUG FIXES:
+
+## v0.0.5
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+
+BUG FIXES:
 - [KEW-1724] Opening sign dialog not working on safari
 
 ## v0.0.4
