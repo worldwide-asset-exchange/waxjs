@@ -26,7 +26,7 @@ export class WaxEventSource {
       }
     };
 
-    let eventPromise = this.onceEvent(
+    const eventPromise = this.onceEvent(
       // @ts-ignore
       openedWindow,
       this.waxSigningURL,
@@ -81,9 +81,9 @@ export class WaxEventSource {
     });
   }
 
-  private timeout = function() {
+  private timeout = () => {
     return new Promise((resolve, reject) => {
-      let wait = setTimeout(() => {
+      const wait = setTimeout(() => {
         clearTimeout(wait);
         reject(new Error("Timeout"));
       }, 2000);
