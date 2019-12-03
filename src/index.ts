@@ -21,81 +21,14 @@ export class WaxJS {
   }
 
   public async login() {
-    const receiveMessage = async (event: any) => {
-      const {
-        verified,
-        userAccount,
-        pubKeys,
-        whitelistedContracts,
-        autoLogin
-      } = event.data;
-      if (!verified) {
-        throw new Error("User declined to share their user account");
-      }
-
-      if (userAccount == null || pubKeys == null) {
-        throw new Error("User does not have a blockchain account");
-      }
-
-      if (autoLogin) {
-        localStorage.setItem("userAccount", userAccount);
-      }
-
-      this.setWhitelistedContracts(whitelistedContracts);
-      this.userAccount = userAccount;
-      this.pubKeys = pubKeys;
-
-      const signer = {
-        getAvailableKeys: () => {
-          return this.pubKeys;
-        },
-        sign: async (data: any) => {
-          return {
-            serializedTransaction: data.serializedTransaction,
-            signatures: await this.signing(data.serializedTransaction)
-          };
-        }
-      };
-      // @ts-ignore
-      this.api = new Api({ rpc: this.rpc, signatureProvider: signer });
-      const transact = this.api.transact.bind(this.api);
-      const url = this.waxSigningURL + "/cloud-wallet/signing/";
-      // We monkeypatch the transact method to overcome timeouts
-      // firing the pop-up which some browsers enforce, such as Safari.
-      // By pre-creating the pop-up window we will interact with,
-      // we ensure that it is not going to be rejected due to a delayed
-      // pop up that would otherwise occur post transaction creation
-      this.api.transact = async (transaction, namedParams) => {
-        if (!(await this.canAutoAccept(transaction))) {
-          this.signingWindow = await window.open(url, "_blank");
-        }
-        return await transact(transaction, namedParams);
-      };
-
-      return this.userAccount;
-    };
-
-    const userAccount: string = localStorage.getItem("userAccount");
-    if (userAccount) {
-      const response = await fetch(this.waxAutoSigningURL + "login", {
-        method: "get",
-        credentials: "include"
-      });
-      const json = await response.json();
-      if (json.processed && json.processed.except) {
-        throw new Error(json);
-      }
-      return receiveMessage({
-        data: {
-          verified: json.verified,
-          userAccount: json.account_name,
-          pubKeys: json.public_keys,
-          whitelistedContracts: this.getWhitelistedContracts(),
-          autoLogin: true
-        }
-      });
+    if (this.canAutoLogin()) {
+      return this.loginViaEndpoint();
     }
 
+    return this.loginViaWindow();
+  }
+
+  private async loginViaWindow() {
     const confirmationWindow = await this.waxEventSource.openEventSource(
       this.waxSigningURL + "/cloud-wallet/login/"
     );
@@ -103,8 +36,88 @@ export class WaxJS {
     return this.waxEventSource.onceEvent(
       confirmationWindow,
       this.waxSigningURL,
-      receiveMessage
+      this.receiveLogin.bind(this)
     );
+  }
+
+  private async loginViaEndpoint() {
+    const response = await fetch(this.waxAutoSigningURL + "login", {
+      method: "get",
+      credentials: "include"
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Login Endpoint Error ${response.status} ${response.statusText}`
+      );
+    }
+    const json = await response.json();
+    if (json.processed && json.processed.except) {
+      throw new Error(json);
+    }
+    return this.receiveLogin({
+      data: {
+        verified: json.verified,
+        userAccount: json.account_name,
+        pubKeys: json.public_keys,
+        whitelistedContracts: this.getWhitelistedContracts(),
+        autoLogin: true
+      }
+    });
+  }
+
+  private canAutoLogin() {
+    return localStorage.getItem("autoLogin") === "true";
+  }
+
+  private async receiveLogin(event: any) {
+    const {
+      verified,
+      userAccount,
+      pubKeys,
+      whitelistedContracts,
+      autoLogin
+    } = event.data;
+    if (!verified) {
+      throw new Error("User declined to share their user account");
+    }
+
+    if (userAccount == null || pubKeys == null) {
+      throw new Error("User does not have a blockchain account");
+    }
+
+    localStorage.setItem("autoLogin", autoLogin);
+    this.setWhitelistedContracts(whitelistedContracts);
+    this.userAccount = userAccount;
+    this.pubKeys = pubKeys;
+
+    const signer = {
+      getAvailableKeys: () => {
+        return this.pubKeys;
+      },
+      sign: async (data: any) => {
+        return {
+          serializedTransaction: data.serializedTransaction,
+          signatures: await this.signing(data.serializedTransaction)
+        };
+      }
+    };
+    // @ts-ignore
+    this.api = new Api({ rpc: this.rpc, signatureProvider: signer });
+    const transact = this.api.transact.bind(this.api);
+    const url = this.waxSigningURL + "/cloud-wallet/signing/";
+    // We monkeypatch the transact method to overcome timeouts
+    // firing the pop-up which some browsers enforce, such as Safari.
+    // By pre-creating the pop-up window we will interact with,
+    // we ensure that it is not going to be rejected due to a delayed
+    // pop up that would otherwise occur post transaction creation
+    this.api.transact = async (transaction, namedParams) => {
+      if (!(await this.canAutoAccept(transaction))) {
+        this.signingWindow = await window.open(url, "_blank");
+      }
+      return await transact(transaction, namedParams);
+    };
+
+    return this.userAccount;
   }
 
   private getWhitelistedContracts() {
@@ -152,27 +165,23 @@ export class WaxJS {
     try {
       let json;
       let response;
-      try {
-        const f = (global as any).fetch;
-        response = await f(this.waxAutoSigningURL + "signing", {
-          body: JSON.stringify({
-            transaction: Object.values(transaction)
-          }),
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "include",
-          method: "POST"
-        });
-        json = await response.json();
-        if (json.processed && json.processed.except) {
-          throw new Error(json);
-        }
-      } catch (e) {
-        e.isFetchError = true;
-        throw e;
-      }
+      response = await fetch(this.waxAutoSigningURL + "signing", {
+        body: JSON.stringify({
+          transaction: Object.values(transaction)
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        method: "POST"
+      });
       if (!response.ok) {
+        throw new Error(
+          `Signing Endpoint Error ${response.status} ${response.statusText}`
+        );
+      }
+      json = await response.json();
+      if (json.processed && json.processed.except) {
         throw new Error(json);
       }
       const { signatures } = json;
