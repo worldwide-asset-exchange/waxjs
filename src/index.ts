@@ -111,7 +111,7 @@ export class WaxJS {
     // we ensure that it is not going to be rejected due to a delayed
     // pop up that would otherwise occur post transaction creation
     this.api.transact = async (transaction, namedParams) => {
-      if (!(await this.canAutoAccept(transaction))) {
+      if (!(await this.canAutoSign(transaction))) {
         this.signingWindow = await window.open(url, "_blank");
       }
       return await transact(transaction, namedParams);
@@ -131,7 +131,7 @@ export class WaxJS {
     );
   }
 
-  private async canAutoAccept(transaction: any) {
+  private async canAutoSign(transaction: any) {
     const deserializedTransaction = transaction.actions
       ? transaction
       : await this.api.deserializeTransactionWithActions(transaction);
@@ -154,7 +154,7 @@ export class WaxJS {
   }
 
   private async signing(transaction: any) {
-    if (await this.canAutoAccept(transaction)) {
+    if (await this.canAutoSign(transaction)) {
       return this.signViaEndpoint(transaction);
     }
 
