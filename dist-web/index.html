@@ -52,6 +52,19 @@
             stake_cpu_quantity: '0.00000000 WAX',
             transfer: false,
           },
+        }, {
+          account: 'eosio.token',
+          name: 'transfer',
+          authorization: [{
+            actor: wax.userAccount,
+            permission: 'active',
+          }],
+          data: {
+            from: wax.userAccount,
+            to: wax.userAccount.replace('.wam', '.waa'),
+            quantity: '0.00000001 WAX',
+            memo: 'test send ' + Math.floor((Math.random() * 10000))
+          },
         }]
       }, {
         blocksBehind: 3,
