@@ -65,7 +65,7 @@ export class WaxJS {
       // we ensure that it is not going to be rejected due to a delayed
       // pop up that would otherwise occur post transaction creation
       this.api.transact = async (transaction, namedParams) => {
-        if (!this.autoAccept(transaction)) {
+        if (!(await this.autoAccept(transaction))) {
           this.signingWindow = await window.open(url, "_blank");
         }
         return await transact(transaction, namedParams);
@@ -81,20 +81,29 @@ export class WaxJS {
     );
   }
 
-  private autoAccept(transaction: any) {
+  private async autoAccept(transaction: any) {
     const deserializedTransaction = transaction.actions
       ? transaction
-      : this.api.deserializeTransaction(transaction);
-    return (
-      undefined !==
-      deserializedTransaction.actions.find((a: any) => {
-        return this.whitelistedContracts.find(w => w.contract === a.account);
-      })
-    );
+      : await this.api.deserializeTransactionWithActions(transaction);
+    return !deserializedTransaction.actions.find((action: any) => {
+      return !this.isWhitelisted(action);
+    });
+  }
+
+  private isWhitelisted(action: any) {
+    return !!this.whitelistedContracts.find(w => {
+      if (w.contract === action.account) {
+        if (action.account === "eosio.token" && action.name === "transfer") {
+          return w.recipients.includes(action.data.to);
+        }
+        return true;
+      }
+      return false;
+    });
   }
 
   private async signing(transaction: any) {
-    if (this.autoAccept(transaction)) {
+    if (await this.autoAccept(transaction)) {
       return this.signViaEndpoint(transaction);
     }
 
