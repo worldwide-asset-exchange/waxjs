@@ -22,7 +22,10 @@ export class WaxJS {
 
   public async login() {
     if (this.canAutoLogin()) {
-      return this.loginViaEndpoint();
+      return this.loginViaEndpoint().catch(() =>
+        // Attempt to recover by logging in via the window method
+        this.loginViaWindow()
+      );
     }
 
     return this.loginViaWindow();
@@ -139,7 +142,10 @@ export class WaxJS {
 
   private async signing(transaction: any) {
     if (await this.canAutoSign(transaction)) {
-      return this.signViaEndpoint(transaction);
+      return this.signViaEndpoint(transaction).catch(() =>
+        // Attempt to recover by signing via the window method
+        this.signViaWindow(undefined, transaction)
+      );
     }
 
     return this.signViaWindow(this.signingWindow, transaction);
@@ -191,10 +197,10 @@ export class WaxJS {
   private async receiveSignatures(event: any) {
     if (event.data.type === "TX_SIGNED") {
       const { verified, signatures, whitelistedContracts } = event.data;
-      this.whitelistedContracts = whitelistedContracts;
       if (!verified || signatures == null) {
         throw new Error("User declined to sign the transaction");
       }
+      this.whitelistedContracts = whitelistedContracts;
 
       return signatures;
     }
