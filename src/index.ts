@@ -104,7 +104,11 @@ export class WaxJS {
     // pop up that would otherwise occur post transaction creation
     this.api.transact = async (transaction, namedParams) => {
       if (!(await this.canAutoSign(transaction))) {
-        this.signingWindow = await window.open(url, "_blank");
+        this.signingWindow = await window.open(
+          url,
+          "WaxPopup",
+          "height=800,width=600"
+        );
       }
       return await transact(transaction, namedParams);
     };
