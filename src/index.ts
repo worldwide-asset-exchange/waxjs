@@ -50,19 +50,11 @@ export class WaxJS {
         `Login Endpoint Error ${response.status} ${response.statusText}`
       );
     }
-    const json = await response.json();
-    if (json.processed && json.processed.except) {
-      throw new Error(json);
+    const data = await response.json();
+    if (data.processed && data.processed.except) {
+      throw new Error(data);
     }
-    return this.receiveLogin({
-      data: {
-        verified: json.verified,
-        userAccount: json.account_name,
-        pubKeys: json.public_keys,
-        whitelistedContracts: this.getWhitelistedContracts(),
-        autoLogin: true
-      }
-    });
+    return this.receiveLogin({ data });
   }
 
   private canAutoLogin() {
@@ -86,7 +78,7 @@ export class WaxJS {
     }
 
     localStorage.setItem("autoLogin", autoLogin);
-    this.setWhitelistedContracts(whitelistedContracts);
+    this.whitelistedContracts = whitelistedContracts;
     this.userAccount = userAccount;
     this.pubKeys = pubKeys;
 
@@ -120,29 +112,17 @@ export class WaxJS {
     return this.userAccount;
   }
 
-  private getWhitelistedContracts() {
-    return JSON.parse(localStorage.getItem("whitelistedContracts") || "[]");
-  }
-
-  private setWhitelistedContracts(whitelistedContracts: any = []) {
-    localStorage.setItem(
-      "whitelistedContracts",
-      JSON.stringify(whitelistedContracts)
-    );
-  }
-
   private async canAutoSign(transaction: any) {
     const deserializedTransaction = transaction.actions
       ? transaction
       : await this.api.deserializeTransactionWithActions(transaction);
-    const whitelistedContracts = this.getWhitelistedContracts();
     return !deserializedTransaction.actions.find((action: any) => {
-      return !this.isWhitelisted(whitelistedContracts, action);
+      return !this.isWhitelisted(action);
     });
   }
 
-  private isWhitelisted(whitelistedContracts: any, action: any) {
-    return !!whitelistedContracts.find((w: any) => {
+  private isWhitelisted(action: any) {
+    return !!this.whitelistedContracts.find((w: any) => {
       if (w.contract === action.account) {
         if (action.account === "eosio.token" && action.name === "transfer") {
           return w.recipients.includes(action.data.to);
@@ -163,9 +143,7 @@ export class WaxJS {
 
   private async signViaEndpoint(transaction: any) {
     try {
-      let json;
-      let response;
-      response = await fetch(this.waxAutoSigningURL + "signing", {
+      const response: any = await fetch(this.waxAutoSigningURL + "signing", {
         body: JSON.stringify({
           transaction: Object.values(transaction)
         }),
@@ -180,18 +158,14 @@ export class WaxJS {
           `Signing Endpoint Error ${response.status} ${response.statusText}`
         );
       }
-      json = await response.json();
-      if (json.processed && json.processed.except) {
-        throw new Error(json);
+      const data: any = await response.json();
+      if (data.processed && data.processed.except) {
+        throw new Error(data);
       }
-      const { signatures } = json;
-      if (signatures == null) {
-        throw new Error("Endpoint failed to sign the transaction");
-      }
-      return signatures;
+      return this.receiveSignatures({ data });
     } catch (e) {
       // clear the whitelist to make sure we don't repeatedly attempt blocked actions
-      this.setWhitelistedContracts();
+      this.whitelistedContracts = [];
       throw e;
     }
   }
@@ -203,22 +177,22 @@ export class WaxJS {
       window
     );
 
-    const signTransaction = async (event: any) => {
-      if (event.data.type === "TX_SIGNED") {
-        const { verified, signatures, whitelistedContracts } = event.data;
-        this.setWhitelistedContracts(whitelistedContracts);
-        if (!verified || signatures == null) {
-          throw new Error("User declined to sign the transaction");
-        }
-
-        return signatures;
-      }
-    };
-
     return this.waxEventSource.onceEvent(
       confirmationWindow,
       this.waxSigningURL,
-      signTransaction
+      this.receiveSignatures.bind(this)
     );
+  }
+
+  private async receiveSignatures(event: any) {
+    if (event.data.type === "TX_SIGNED") {
+      const { verified, signatures, whitelistedContracts } = event.data;
+      this.whitelistedContracts = whitelistedContracts;
+      if (!verified || signatures == null) {
+        throw new Error("User declined to sign the transaction");
+      }
+
+      return signatures;
+    }
   }
 }
