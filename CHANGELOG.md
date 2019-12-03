@@ -10,6 +10,17 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v0.0.7
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+- [KEW-1776] Whitelisted actions and auto sign-in
+
+BUG FIXES:
+
 ## v0.0.6
 
 BREAKING CHANGES:
