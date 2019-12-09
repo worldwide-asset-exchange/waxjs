@@ -81,7 +81,7 @@ export class WaxJS {
     }
 
     localStorage.setItem("autoLogin", autoLogin);
-    this.whitelistedContracts = whitelistedContracts;
+    this.whitelistedContracts = whitelistedContracts || [];
     this.userAccount = userAccount;
     this.pubKeys = pubKeys;
 
@@ -200,7 +200,7 @@ export class WaxJS {
       if (!verified || signatures == null) {
         throw new Error("User declined to sign the transaction");
       }
-      this.whitelistedContracts = whitelistedContracts;
+      this.whitelistedContracts = whitelistedContracts || [];
 
       return signatures;
     }

@@ -1,6 +1,6 @@
 # Changelog
 
-## Pending
+## Pending (v0.0.8)
 
 BREAKING CHANGES:
 
@@ -9,6 +9,7 @@ FEATURES:
 IMPROVEMENTS:
 
 BUG FIXES:
+- Fix for whitelists not getting set by some browsers. Ex Brave
 
 ## v0.0.7
 
