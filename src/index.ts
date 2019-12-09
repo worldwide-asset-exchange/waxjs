@@ -61,7 +61,8 @@ export class WaxJS {
   }
 
   private canAutoLogin() {
-    return localStorage.getItem("autoLogin") === "true";
+    // only allow autologin with chrome
+    return localStorage.getItem("autoLogin") === "true" && this.isChrome();
   }
 
   private async receiveLogin(event: any) {
@@ -204,5 +205,11 @@ export class WaxJS {
 
       return signatures;
     }
+  }
+
+  private isChrome() {
+    return (
+      /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)
+    );
   }
 }
