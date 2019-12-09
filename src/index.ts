@@ -1,6 +1,6 @@
 import { Api, JsonRpc, RpcError } from "eosjs";
+import { IWhitelistedContract } from "./IWhitelistedContract";
 import { WaxEventSource } from "./WaxEventSource";
-import { WhitelistedContract } from "./WhitelistedContract";
 
 export class WaxJS {
   private waxEventSource: WaxEventSource;
@@ -9,7 +9,7 @@ export class WaxJS {
   private userAccount: string;
   private pubKeys: string[];
   private signingWindow: Window;
-  private whitelistedContracts: WhitelistedContract[];
+  private whitelistedContracts: IWhitelistedContract[];
 
   constructor(
     rcpEndpoint: string,
@@ -45,8 +45,8 @@ export class WaxJS {
 
   private async loginViaEndpoint() {
     const response = await fetch(this.waxAutoSigningURL + "login", {
-      method: "get",
-      credentials: "include"
+      credentials: "include",
+      method: "get"
     });
     if (!response.ok) {
       throw new Error(
@@ -158,10 +158,10 @@ export class WaxJS {
         body: JSON.stringify({
           transaction: Object.values(transaction)
         }),
+        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
-        credentials: "include",
         method: "POST"
       });
       if (!response.ok) {
