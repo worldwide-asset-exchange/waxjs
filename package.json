@@ -1,6 +1,6 @@
 {
   "name": "@waxio/waxjs",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Javascript API for integration with the WAX Cloud Wallet.",
   "scripts": {
     "build": "tsc",
