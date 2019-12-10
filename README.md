@@ -42,6 +42,12 @@ Instantiate the waxjs object with the RPC server you wish to connect to.
 const wax = new waxjs.WaxJS('https://wax.greymass.com');
 ```
 
+The library can also be instatiated with the user account and the public keys. Due to the library contains the user information, the login step can be avoided. 
+
+```js
+const wax = new waxjs.WaxJS('https://wax.greymass.com', 'user1', ['EOS7rC8jFvFrPYDqp3Nh3HdRfL79h11B1JhPEXy85enF5wwYzF3Hk']);
+```
+ 
 ### 2. Login
 
 Log your user in so as to access their wax account name for creating transactions.

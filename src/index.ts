@@ -13,11 +13,18 @@ export class WaxJS {
 
   constructor(
     rcpEndpoint: string,
+    userAccount: string,
+    pubKeys: string[],
     private waxSigningURL: string = "https://all-access.wax.io",
     private waxAutoSigningURL: string = "https://api-idm.wax.io/v1/accounts/auto-accept/"
   ) {
     this.waxEventSource = new WaxEventSource(waxSigningURL);
     this.rpc = new JsonRpc(rcpEndpoint);
+
+    if (userAccount && Array.isArray(pubKeys)) {
+      const data = { userAccount, pubKeys, verified: true };
+      this.receiveLogin({ data });
+    }
   }
 
   public async login() {

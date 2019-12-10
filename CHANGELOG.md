@@ -3,6 +3,7 @@
 ## Pending
 
 BREAKING CHANGES:
+- [WD-1307] Accept initialization with account and pubkeys
 
 FEATURES:
 
