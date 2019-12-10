@@ -1,12 +1,23 @@
 # Changelog
 
-## Pending (v0.0.8)
+## Pending
 
 BREAKING CHANGES:
 
 FEATURES:
 
 IMPROVEMENTS:
+
+BUG FIXES:
+
+## v0.0.8
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+- [KEW-1801] Only autologin on chrome
 
 BUG FIXES:
 - Fix for whitelists not getting set by some browsers. Ex Brave
