@@ -3,7 +3,17 @@
 ## Pending
 
 BREAKING CHANGES:
-- [WD-1307] Accept initialization with account and pubkeys
+
+FEATURES:
+
+IMPROVEMENTS:
+
+BUG FIXES:
+
+## v0.0.9
+
+BREAKING CHANGES:
+- [KEW-1804] Accept initialization with account and pubkeys
 
 FEATURES:
 
