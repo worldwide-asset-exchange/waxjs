@@ -3,9 +3,9 @@ import { IWhitelistedContract } from "./IWhitelistedContract";
 import { WaxEventSource } from "./WaxEventSource";
 
 export class WaxJS {
+  public api: Api;
   private waxEventSource: WaxEventSource;
   private readonly rpc: JsonRpc;
-  private api: Api;
   private userAccount: string;
   private pubKeys: string[];
   private signingWindow: Window;
@@ -13,8 +13,8 @@ export class WaxJS {
 
   constructor(
     rcpEndpoint: string,
-    userAccount: string,
-    pubKeys: string[],
+    userAccount: string = null,
+    pubKeys: string[] = null,
     private waxSigningURL: string = "https://all-access.wax.io",
     private waxAutoSigningURL: string = "https://api-idm.wax.io/v1/accounts/auto-accept/"
   ) {

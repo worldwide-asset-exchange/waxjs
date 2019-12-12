@@ -10,6 +10,17 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v0.0.10
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+
+BUG FIXES:
+- [KEW-1806] Fix default params for typescript and make api member public
+
 ## v0.0.9
 
 BREAKING CHANGES:
