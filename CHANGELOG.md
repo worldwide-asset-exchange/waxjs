@@ -10,6 +10,17 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v0.0.11
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS: 
+- [KEW-1816] Attempt to auto-login when waxjs is instantiated
+
+BUG FIXES:
+
 ## v0.0.10
 
 BREAKING CHANGES:
