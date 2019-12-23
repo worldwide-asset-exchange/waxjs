@@ -47,6 +47,12 @@ The library can also be instatiated with the user account and the public keys. D
 ```js
 const wax = new waxjs.WaxJS('https://wax.greymass.com', 'user1', ['EOS7rC8jFvFrPYDqp3Nh3HdRfL79h11B1JhPEXy85enF5wwYzF3Hk']);
 ```
+
+If you want to handle the auto-login on your side with the ```isAutoLoginAvailable``` function (to avoid waiting for the user to click a button), you can disable the auto-login function in the constructor (so it won't get called twice).
+
+```js
+const wax = new waxjs.WaxJS('https://wax.greymass.com', null, null, false);
+```
  
 ### 2. Login
 
