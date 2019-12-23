@@ -15,6 +15,7 @@ export class WaxJS {
     rcpEndpoint: string,
     userAccount: string = null,
     pubKeys: string[] = null,
+	tryAutoLogin: boolean = true,
     private waxSigningURL: string = "https://all-access.wax.io",
     private waxAutoSigningURL: string = "https://api-idm.wax.io/v1/accounts/auto-accept/"
   ) {
@@ -22,27 +23,45 @@ export class WaxJS {
     this.rpc = new JsonRpc(rcpEndpoint);
 
     if (userAccount && Array.isArray(pubKeys)) {
+	  // login from constructor
       const data = { userAccount, pubKeys, verified: true };
       this.receiveLogin({ data });
-    }
+    } else {
+	  // try to auto-login via endpoint 
+	  if (tryAutoLogin) {
+	    this.loginViaEndpoint();
+	  }
+	}
   }
 
   public async login() {
-    if (this.canAutoLogin()) {
-      return this.loginViaEndpoint().catch(() =>
-        // Attempt to recover by logging in via the window method
-        this.loginViaWindow()
-      );
-    }
-
-    return this.loginViaWindow();
+    if (this.userAccount && Array.isArray(this.pubKeys)) {
+	  return this.userAccount;
+	} else { // login via UI
+	  return this.loginViaWindow();
+	}
+  }
+  
+  public async isAutoLoginAvailable() {
+	if (this.userAccount && Array.isArray(this.pubKeys)) {
+	  return true;
+	} else {
+	  // try to auto-login via endpoint   
+	  try {
+	    await this.loginViaEndpoint();
+	    return true;
+	  } catch(e) {
+	    return false;
+	  }
+	}
+	return false;
   }
 
   private async loginViaWindow() {
     const confirmationWindow = await this.waxEventSource.openEventSource(
       this.waxSigningURL + "/cloud-wallet/login/"
     );
-
+	
     return this.waxEventSource.onceEvent(
       confirmationWindow,
       this.waxSigningURL,
