@@ -57,7 +57,7 @@ export class WaxEventSource {
         async function onEvent(event) {
           // Validate expected origin for event
           if (event.origin !== origin) {
-            reject(new Error("Invalid origin"));
+            return;
           }
 
           // Validate expected source for event
