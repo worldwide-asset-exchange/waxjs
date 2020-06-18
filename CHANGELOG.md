@@ -10,6 +10,15 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v0.0.12
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+- don't fail on alternate origin
+
 ## v0.0.11
 
 BREAKING CHANGES:
