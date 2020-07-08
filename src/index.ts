@@ -1,6 +1,6 @@
 import { Api, JsonRpc } from "eosjs";
-import { IWhitelistedContract } from "./IWhitelistedContract";
 import { SignatureProvider } from "eosjs/dist/eosjs-api-interfaces";
+import { IWhitelistedContract } from "./IWhitelistedContract";
 import { WaxEventSource } from "./WaxEventSource";
 
 export class WaxJS {
@@ -29,7 +29,7 @@ export class WaxJS {
       const data = { userAccount, pubKeys, verified: true };
       this.receiveLogin({ data });
     } else {
-      // try to auto-login via endpoint 
+      // try to auto-login via endpoint
       if (tryAutoLogin) {
         this.loginViaEndpoint();
       }
@@ -39,21 +39,22 @@ export class WaxJS {
   public async login() {
     if (this.userAccount && Array.isArray(this.pubKeys)) {
       return this.userAccount;
-    } else { // login via UI
+    } else {
+      // login via UI
       return this.loginViaWindow();
     }
   }
-  
+
   public async isAutoLoginAvailable() {
     if (this.userAccount && Array.isArray(this.pubKeys)) {
       return true;
     } else {
-      // try to auto-login via endpoint   
+      // try to auto-login via endpoint
       try {
         await this.loginViaEndpoint();
-	  return true;
-      } catch(e) {
-	  return false;
+        return true;
+      } catch (e) {
+        return false;
       }
     }
     return false;
@@ -63,7 +64,7 @@ export class WaxJS {
     const confirmationWindow = await this.waxEventSource.openEventSource(
       this.waxSigningURL + "/cloud-wallet/login/"
     );
-	
+
     return this.waxEventSource.onceEvent(
       confirmationWindow,
       this.waxSigningURL,
@@ -113,15 +114,18 @@ export class WaxJS {
       getAvailableKeys: async () => {
         return [
           ...this.pubKeys,
-          ...((this.apiSigner && await this.apiSigner.getAvailableKeys()) || [])
+          ...((this.apiSigner && (await this.apiSigner.getAvailableKeys())) ||
+            [])
         ];
       },
       sign: async (data: any) => {
         return {
           serializedTransaction: data.serializedTransaction,
           signatures: [
-              ...(await this.signing(data.serializedTransaction)),
-              ...((this.apiSigner && (await this.apiSigner.sign(data)).signatures) || [])
+            ...(await this.signing(data.serializedTransaction)),
+            ...((this.apiSigner &&
+              (await this.apiSigner.sign(data)).signatures) ||
+              [])
           ]
         };
       }

@@ -110,3 +110,7 @@ const result = await wax.api.transact({
 ### Build for web 
 
 ``` npm run build-web```
+
+## Contributing
+
+When making a pull request, please make sure to run `npm run prettier` to make sure your code is as formatted as possible. Also, make sure `npm run lint` runs without errors, since that is the final check before a new version is published to npm.
