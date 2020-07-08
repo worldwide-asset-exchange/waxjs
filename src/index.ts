@@ -1,5 +1,6 @@
-import { Api, JsonRpc, RpcError } from "eosjs";
+import { Api, JsonRpc } from "eosjs";
 import { IWhitelistedContract } from "./IWhitelistedContract";
+import { SignatureProvider } from "eosjs/dist/eosjs-api-interfaces";
 import { WaxEventSource } from "./WaxEventSource";
 
 export class WaxJS {
@@ -16,6 +17,7 @@ export class WaxJS {
     userAccount: string = null,
     pubKeys: string[] = null,
     tryAutoLogin: boolean = true,
+    private apiSigner: SignatureProvider = null,
     private waxSigningURL: string = "https://all-access.wax.io",
     private waxAutoSigningURL: string = "https://api-idm.wax.io/v1/accounts/auto-accept/"
   ) {
@@ -86,11 +88,6 @@ export class WaxJS {
     return this.receiveLogin({ data });
   }
 
-  private canAutoLogin() {
-    // only allow autologin with chrome
-    return localStorage.getItem("autoLogin") === "true" && this.isChrome();
-  }
-
   private async receiveLogin(event: any) {
     const {
       verified,
@@ -113,13 +110,19 @@ export class WaxJS {
     this.pubKeys = pubKeys;
 
     const signer = {
-      getAvailableKeys: () => {
-        return this.pubKeys;
+      getAvailableKeys: async () => {
+        return [
+          ...this.pubKeys,
+          ...((this.apiSigner && await this.apiSigner.getAvailableKeys()) || [])
+        ];
       },
       sign: async (data: any) => {
         return {
           serializedTransaction: data.serializedTransaction,
-          signatures: await this.signing(data.serializedTransaction)
+          signatures: [
+              ...(await this.signing(data.serializedTransaction)),
+              ...((this.apiSigner && (await this.apiSigner.sign(data)).signatures) || [])
+          ]
         };
       }
     };
@@ -231,11 +234,5 @@ export class WaxJS {
 
       return signatures;
     }
-  }
-
-  private isChrome() {
-    return (
-      /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)
-    );
   }
 }
