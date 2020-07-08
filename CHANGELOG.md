@@ -10,6 +10,15 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v0.0.13
+
+BREAKING CHANGES:
+
+FEATURES:
+- Optional signing capacity for an API provider to pay for a user's CPU/NET via ONLY_BILL_FIRST_AUTHORIZER
+
+IMPROVEMENTS:
+
 ## v0.0.12
 
 BREAKING CHANGES:
