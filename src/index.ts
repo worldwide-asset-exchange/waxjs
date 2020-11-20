@@ -237,6 +237,10 @@ export class WaxJS {
       this.whitelistedContracts = whitelistedContracts || [];
 
       return signatures;
+    } else if(event.data.type === "READY") {
+      throw new Error("User started a new transaction");
+    } else {
+      throw new Error(`Unexpected response received when attempting signing: ${JSON.stringify(event.data, undefined, 2)}`);
     }
   }
 }

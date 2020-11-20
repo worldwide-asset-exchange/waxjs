@@ -21,6 +21,7 @@
 
 <script>
   const wax = new waxjs.WaxJS('https://wax.greymass.com');
+  // const wax = new waxjs.WaxJS('http://localhost:8888', null, null, true, null, 'http://all-access.wax.test:8113', 'http://api-idm.wax.test/v1/accounts/auto-accept/');
 
   async function login() {
     try {
@@ -61,9 +62,9 @@
           }],
           data: {
             from: wax.userAccount,
-            to: wax.userAccount.replace('.wam', '.waa'),
+            to: 'eosio',
             quantity: '0.00000001 WAX',
-            memo: 'test send ' + Math.floor((Math.random() * 10000))
+            memo: 'test send ' + Math.floor((Math.random() * 1000000))
           },
         }]
       }, {

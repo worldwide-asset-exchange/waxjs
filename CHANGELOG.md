@@ -10,6 +10,17 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v0.0.14
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+
+BUG FIXES:
+- Improved error reporting when signing fails or is dismissed by the user
+
 ## v0.0.13
 
 BREAKING CHANGES:
