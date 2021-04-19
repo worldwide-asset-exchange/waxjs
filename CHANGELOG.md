@@ -10,6 +10,17 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v0.0.15
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+
+BUG FIXES:
+- Fix for "new transaction" and "not iterable" errors when signing transactions
+
 ## v0.0.14
 
 BREAKING CHANGES:
