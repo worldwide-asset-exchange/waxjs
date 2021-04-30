@@ -1,82 +1,88 @@
 <!DOCTYPE html>
 <html>
-<script src='waxjs.js'></script>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <script src="waxjs.js"></script>
 
-<body>
+  <body>
+    <h1>wax signing lib example.</h1>
+    <p>this is a library test.</p>
+    <p>Click the buttons</p>
 
-<h1>wax signing lib example.</h1>
+    <button id="login" onclick="login()">WAX Login</button>
+    <button id="sign" onclick="sign()">Sign transaction</button>
 
-<p>this is a library test.</p>
+    <h2 id="response"></h2>
+    <p id="demo"></p>
 
-<p>Click the buttons</p>
+    <script>
+      const wax = new waxjs.WaxJS("https://wax.greymass.com");
+      // const wax = new waxjs.WaxJS('http://localhost:8888', null, null, true, null, 'http://all-access.wax.test:8113', 'http://api-idm.wax.test/v1/accounts/auto-accept/');
 
-<button id="login" onclick=login() >WAX Login</button>
-<button id="sign" onclick=sign() >Sign transaction</button>
+      async function login() {
+        try {
+          const userAccount = await wax.login();
+          document.getElementById("response").append(userAccount);
+        } catch (e) {
+          document.getElementById("response").append(e.message);
+        }
+      }
 
-<h2 id="response"></h2>
+      async function sign() {
+        if (!wax.api) {
+          return document.getElementById("response").append("* Login first *");
+        }
 
-
-<p id="demo"></p>
-
-
-<script>
-  const wax = new waxjs.WaxJS('https://wax.greymass.com');
-  // const wax = new waxjs.WaxJS('http://localhost:8888', null, null, true, null, 'http://all-access.wax.test:8113', 'http://api-idm.wax.test/v1/accounts/auto-accept/');
-
-  async function login() {
-    try {
-      const userAccount = await wax.login();
-      document.getElementById('response').append(userAccount);
-    } catch(e) {
-      document.getElementById('response').append(e.message);
-    }
-  }
-
-  async function sign() {
-    if(!wax.api) {
-      return document.getElementById('response').append('* Login first *');
-    }
-
-    try {
-      const result = await wax.api.transact({
-        actions: [{
-          account: 'eosio',
-          name: 'delegatebw',
-          authorization: [{
-            actor: wax.userAccount,
-            permission: 'active',
-          }],
-          data: {
-            from: wax.userAccount,
-            receiver: wax.userAccount,
-            stake_net_quantity: '0.00000001 WAX',
-            stake_cpu_quantity: '0.00000000 WAX',
-            transfer: false,
-          },
-        }, {
-          account: 'eosio.token',
-          name: 'transfer',
-          authorization: [{
-            actor: wax.userAccount,
-            permission: 'active',
-          }],
-          data: {
-            from: wax.userAccount,
-            to: 'eosio',
-            quantity: '0.00000001 WAX',
-            memo: 'test send ' + Math.floor((Math.random() * 1000000))
-          },
-        }]
-      }, {
-        blocksBehind: 3,
-        expireSeconds: 30
-      });
-      document.getElementById('response').append(JSON.stringify(result))
-    } catch(e) {
-      document.getElementById('response').append(e.message);
-    }
-  }
-
-</script>
-</body>
+        try {
+          const result = await wax.api.transact(
+            {
+              actions: [
+                {
+                  account: "eosio",
+                  name: "delegatebw",
+                  authorization: [
+                    {
+                      actor: wax.userAccount,
+                      permission: "active",
+                    },
+                  ],
+                  data: {
+                    from: wax.userAccount,
+                    receiver: wax.userAccount,
+                    stake_net_quantity: "0.00000001 WAX",
+                    stake_cpu_quantity: "0.00000000 WAX",
+                    transfer: false,
+                  },
+                },
+                {
+                  account: "eosio.token",
+                  name: "transfer",
+                  authorization: [
+                    {
+                      actor: wax.userAccount,
+                      permission: "active",
+                    },
+                  ],
+                  data: {
+                    from: wax.userAccount,
+                    to: "eosio",
+                    quantity: "0.00000001 WAX",
+                    memo: "test send " + Math.floor(Math.random() * 1000000),
+                  },
+                },
+              ],
+            },
+            {
+              blocksBehind: 3,
+              expireSeconds: 30,
+            }
+          );
+          document.getElementById("response").append(JSON.stringify(result));
+        } catch (e) {
+          document.getElementById("response").append(e.message);
+        }
+      }
+    </script>
+  </body>
 </html>

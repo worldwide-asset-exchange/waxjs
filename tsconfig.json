@@ -6,9 +6,6 @@
     "outDir": "./dist",
     "strict": false
   },
-  "include": [
-       "src/**/*.ts" ,
-       "src/**/*.js"
-    ], 
+  "include": ["src/**/*.ts", "src/**/*.js"],
   "exclude": ["node_modules", "**/__tests__/*"]
 }

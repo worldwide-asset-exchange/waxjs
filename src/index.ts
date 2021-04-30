@@ -1,6 +1,6 @@
 import { Api, JsonRpc } from "eosjs";
-import { SignatureProvider } from "eosjs/dist/eosjs-api-interfaces";
-import { IWhitelistedContract } from "./IWhitelistedContract";
+import type { SignatureProvider } from "eosjs/dist/eosjs-api-interfaces";
+import type { IWhitelistedContract } from "./IWhitelistedContract";
 import { WaxEventSource } from "./WaxEventSource";
 
 export class WaxJS {
@@ -75,7 +75,7 @@ export class WaxJS {
   private async loginViaEndpoint() {
     const response = await fetch(this.waxAutoSigningURL + "login", {
       credentials: "include",
-      method: "get"
+      method: "get",
     });
     if (!response.ok) {
       throw new Error(
@@ -95,7 +95,7 @@ export class WaxJS {
       userAccount,
       pubKeys,
       whitelistedContracts,
-      autoLogin
+      autoLogin,
     } = event.data;
     if (!verified) {
       throw new Error("User declined to share their user account");
@@ -115,7 +115,7 @@ export class WaxJS {
         return [
           ...this.pubKeys,
           ...((this.apiSigner && (await this.apiSigner.getAvailableKeys())) ||
-            [])
+            []),
         ];
       },
       sign: async (data: any) => {
@@ -125,10 +125,10 @@ export class WaxJS {
             ...(await this.signing(data.serializedTransaction)),
             ...((this.apiSigner &&
               (await this.apiSigner.sign(data)).signatures) ||
-              [])
-          ]
+              []),
+          ],
         };
-      }
+      },
     };
     // @ts-ignore
     this.api = new Api({ rpc: this.rpc, signatureProvider: signer });
@@ -189,13 +189,13 @@ export class WaxJS {
     try {
       const response: any = await fetch(this.waxAutoSigningURL + "signing", {
         body: JSON.stringify({
-          transaction: Object.values(transaction)
+          transaction: Object.values(transaction),
         }),
         credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        method: "POST"
+        method: "POST",
       });
       if (!response.ok) {
         throw new Error(
