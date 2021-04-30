@@ -37,7 +37,7 @@
     "webpack-cli": "^4.6.0"
   },
   "dependencies": {
-    "eosjs": "^20.0.0"
+    "eosjs": "^21.0.4"
   },
   "files": [
     "dist"
