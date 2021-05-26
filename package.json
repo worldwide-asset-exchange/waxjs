@@ -1,14 +1,15 @@
 {
   "name": "@waxio/waxjs",
-  "version": "0.0.15",
+  "version": "1.0.0",
   "description": "Javascript API for integration with the WAX Cloud Wallet.",
   "scripts": {
     "build": "tsc",
     "build-web": "webpack --config webpack.prod.js",
-    "prettier": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "prettier": "prettier --write \"src/**/*.ts\" \"src/**/*.js\" \"test/**/*.ts\" \"test/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "npm run lint && mocha -r ts-node/register test/**/*.test.ts",
     "docs": "typedoc --excludePrivate --exclude src/waxEventSource.ts --out docs src",
+    "docs:serve": "serve -s docs",
     "serve": "serve -s dist-web",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
@@ -24,8 +25,11 @@
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.7.5",
     "chai": "^4.2.0",
+    "expect-puppeteer": "^5.0.4",
     "mocha": "^6.2.0",
     "prettier": "^1.18.2",
+    "puppeteer": "^10.1.0",
+    "serve": "^11.1.0",
     "ts-loader": "^6.1.0",
     "ts-node": "^8.4.1",
     "tslint": "^5.20.0",
@@ -33,11 +37,10 @@
     "typedoc": "^0.15.0",
     "typescript": "^3.6.3",
     "webpack": "^4.40.3",
-    "webpack-cli": "^3.3.9",
-    "serve": "^11.1.0"
+    "webpack-cli": "^3.3.9"
   },
   "dependencies": {
-    "eosjs": "^20.0.0"
+    "eosjs": "^22.1.0"
   },
   "files": [
     "dist"

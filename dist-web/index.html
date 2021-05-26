@@ -1,32 +1,49 @@
 <!DOCTYPE html>
 <html>
+
 <script src='waxjs.js'></script>
+
+<title>waxjs demo</title>
 
 <body>
 
-<h1>wax signing lib example.</h1>
+<h1>wax signing lib demo and tester</h1>
 
-<p>this is a library test.</p>
+<p>As well as being a demo, this is used by the test cases in the test folder.</p>
+
+<p>This sample dapp operates the <b>test.wax</b> contract's <b>update</b> action.</p>
+
+<p>The source code for this contract can be found in the resources/test-contract folder.</p>
 
 <p>Click the buttons</p>
 
-<button id="login" onclick=login() >WAX Login</button>
-<button id="sign" onclick=sign() >Sign transaction</button>
-
+<button id="login" onclick=login() >WAX Login</button><br><br>
+<hr>
+<label>updater:</label><input id="updater"><br><br>
+<label>message:</label><input id="message"><br><br>
+<label>fail:</label><input type="checkbox" id="fail" value="fail"><br><br>
+<button id="sign" onclick=sign() >Sign transaction</button><br><br>
+<label>Current Message</label><h3 id="current"></h3><br><br>
+<hr>
+<label>Transaction Results</label>
 <h2 id="response"></h2>
 
-
-<p id="demo"></p>
-
-
 <script>
-  const wax = new waxjs.WaxJS('https://wax.greymass.com');
-  // const wax = new waxjs.WaxJS('http://localhost:8888', null, null, true, null, 'http://all-access.wax.test:8113', 'http://api-idm.wax.test/v1/accounts/auto-accept/');
+  const wax = new waxjs.WaxJS({
+    rpcEndpoint: 'https://wax.greymass.com'
+  });
+  // const wax = new waxjs.WaxJS({
+  //   rpcEndpoint: 'http://wax-all.test:8888',
+  //   tryAutoLogin: true,
+  //   waxSigningURL: 'http://all-access.wax.test:8113',
+  //   waxAutoSigningURL: 'http://idm.wax.test:8113/v1/accounts/auto-accept/'
+  // });
 
   async function login() {
     try {
       const userAccount = await wax.login();
-      document.getElementById('response').append(userAccount);
+      document.getElementById('updater').value = userAccount;
+      await getCurrentMessage();
     } catch(e) {
       document.getElementById('response').append(e.message);
     }
@@ -37,45 +54,53 @@
       return document.getElementById('response').append('* Login first *');
     }
 
+    const updater = document.getElementById('updater').value;
+    const message = document.getElementById('message').value;
+    const fail = document.getElementById('fail').checked;
+
     try {
       const result = await wax.api.transact({
         actions: [{
-          account: 'eosio',
-          name: 'delegatebw',
+          account: 'test.wax',
+          name: 'update',
           authorization: [{
             actor: wax.userAccount,
             permission: 'active',
           }],
           data: {
-            from: wax.userAccount,
-            receiver: wax.userAccount,
-            stake_net_quantity: '0.00000001 WAX',
-            stake_cpu_quantity: '0.00000000 WAX',
-            transfer: false,
-          },
-        }, {
-          account: 'eosio.token',
-          name: 'transfer',
-          authorization: [{
-            actor: wax.userAccount,
-            permission: 'active',
-          }],
-          data: {
-            from: wax.userAccount,
-            to: 'eosio',
-            quantity: '0.00000001 WAX',
-            memo: 'test send ' + Math.floor((Math.random() * 1000000))
+            updater,
+            message,
+            fail,
           },
         }]
       }, {
         blocksBehind: 3,
         expireSeconds: 30
       });
-      document.getElementById('response').append(JSON.stringify(result))
+      document.getElementById('response').append(JSON.stringify(result));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await getCurrentMessage();
     } catch(e) {
       document.getElementById('response').append(e.message);
     }
   }
+
+  async function getCurrentMessage() {
+    const res = await wax.rpc.get_table_rows({
+      json: true,
+      code: 'test.wax',
+      scope: 'test.wax',
+      table: 'messages',
+      lower_bound: wax.userAccount,
+      upper_bound: wax.userAccount,
+    });
+
+    const message = res.rows[0] ? res.rows[0].message : `<No message is set for ${wax.userAccount}>`;
+    document.getElementById('current').textContent = message;
+  }
+
+  // set a random value to the initial message value
+  document.getElementById('message').value = Math.random().toString(36).substring(2);
 
 </script>
 </body>
