@@ -224,28 +224,18 @@ export class WaxJS {
     return this.waxEventSource.onceEvent(
       confirmationWindow,
       this.waxSigningURL,
-      this.receiveSignatures.bind(this)
+      this.receiveSignatures.bind(this),
+      "TX_SIGNED"
     );
   }
 
   private async receiveSignatures(event: any) {
-    if (event.data.type === "TX_SIGNED") {
-      const { verified, signatures, whitelistedContracts } = event.data;
-      if (!verified || signatures == null) {
-        throw new Error("User declined to sign the transaction");
-      }
-      this.whitelistedContracts = whitelistedContracts || [];
-
-      return signatures;
-    } else if (event.data.type !== "READY") {
-      throw new Error(
-        `Unexpected response received when attempting signing: ${JSON.stringify(
-          event.data,
-          undefined,
-          2
-        )}`
-      );
+    const { verified, signatures, whitelistedContracts } = event.data;
+    if (!verified || signatures == null) {
+      throw new Error("User declined to sign the transaction");
     }
-    return [];
+    this.whitelistedContracts = whitelistedContracts || [];
+
+    return signatures;
   }
 }
