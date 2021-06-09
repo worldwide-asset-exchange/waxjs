@@ -147,7 +147,13 @@ export class WaxJS {
           "height=800,width=600"
         );
       }
-      return await transact(transaction, namedParams);
+      try {
+        return await transact(transaction, namedParams);
+      }catch(e){
+        e.message = e.message.split(":").join(" ");
+        throw e;
+      }
+
     };
 
     return this.userAccount;
@@ -232,12 +238,14 @@ export class WaxJS {
     if (event.data.type === "TX_SIGNED") {
       const { verified, signatures, whitelistedContracts } = event.data;
       if (!verified || signatures == null) {
+        this.waxEventSource.closeIframe();
         throw new Error("User declined to sign the transaction");
       }
       this.whitelistedContracts = whitelistedContracts || [];
-
+      this.waxEventSource.closeIframe();
       return signatures;
     } else if (event.data.type !== "READY") {
+      this.waxEventSource.closeIframe();
       throw new Error(
         `Unexpected response received when attempting signing: ${JSON.stringify(
           event.data,

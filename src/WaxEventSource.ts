@@ -1,9 +1,55 @@
 export class WaxEventSource {
+  private iframeContainer;
+  private iframe;
   constructor(private waxSigningURL: string = "http://localhost:3000") {
     this.openEventSource = this.openEventSource.bind(this);
     this.onceEvent = this.onceEvent.bind(this);
+    this.iframeContainer =null;
+    this.iframe = null;
   }
+  public setupIframe(){
+    this.iframeContainer = document.createElement("div");
+    this.iframeContainer.style.zIndex = 5000;
+    this.iframeContainer.style.position = "fixed";
+    this.iframeContainer.style.alignSelf = "center";
+    this.iframeContainer.style.top = "10px";
+    this.iframeContainer.style.width = "100%";
+    this.iframeContainer.style.maxWidth = "800px";
+    this.iframeContainer.style.height = "100%";
+    this.iframeContainer.style.overflowY = "scroll";
+    this.iframeContainer.innerHTML = "<div style='position:absolute;cursor: pointer; width:50px;z-index: 10; font-size:36px; font-weight: 800; border: solid 4px #000000; height:50px; color:black; right:1px; top:10px; background: #fff; border-radius: 50%; text-align: center; vertical-align: center' onclick='globalThis.waxjs.closeIframe()'>X</div> ";
 
+    /*
+    this.closeButton = document.createElement("div");
+    this.closeButton.style.position = "fixed";
+    this.closeButton.style.width = "50px";
+    this.closeButton.style.height = "50px";
+    this.closeButton.style.zIndex = 100001;
+    this.closeButton.style.cursor = "pointer";
+
+    this.closeButton.innerHTML = "X";
+    this.closeButton.style.textAlign = "center";
+    */
+    this.iframe = document.createElement("iframe");
+    this.iframe.src = this.waxSigningURL+ "/cloud-wallet/signing/";
+    this.iframe.style.position = "absolute";
+    this.iframe.style.width = "100%";
+    this.iframe.style.height = "800px";
+    this.iframe.style.left = "0%";
+    this.iframe.style.top = "0px";
+    globalThis.waxjs = {closeIframe : this.closeIframe.bind(this)};
+  }
+  public showIframe(){
+    this.setupIframe();
+    document.body.append(this.iframeContainer);
+    this.iframeContainer.append(this.iframe);
+    return this.iframe.contentWindow;
+  }
+  public closeIframe(){
+    if(this.iframeContainer) {
+      this.iframeContainer.remove();
+    }
+  }
   public async openEventSource(
     url: string,
     message?: any,
@@ -11,7 +57,7 @@ export class WaxEventSource {
   ): Promise<any> {
     const openedWindow = win
       ? win
-      : await window.open(url, "WaxPopup", "height=800,width=600");
+      : this.showIframe();
 
     if (!openedWindow) {
       throw new Error("Unable to open a popup window");
@@ -71,6 +117,9 @@ export class WaxEventSource {
 
           try {
             const result: any = await action(event);
+            if(globalThis.closeIframe()) {
+              globalThis.waxjs.closeIframe();
+            }
             resolve(result);
           } catch (e) {
             reject(e);
