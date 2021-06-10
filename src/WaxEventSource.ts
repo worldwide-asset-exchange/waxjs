@@ -55,12 +55,14 @@ export class WaxEventSource {
     message?: any,
     win?: Window
   ): Promise<any> {
-    const openedWindow = win
+    let openedWindow = win
       ? win
-      : this.showIframe();
+      : await window.open(url, "WaxPopup", "height=800,width=600");
 
     if (!openedWindow) {
-      throw new Error("Unable to open a popup window");
+      openedWindow = this.showIframe();
+      // we dont throw an error now instead we handle ith iframe
+      // throw new Error("Unable to open a popup window");
     }
 
     if (typeof message === "undefined") {
