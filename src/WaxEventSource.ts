@@ -4,11 +4,11 @@ export class WaxEventSource {
   constructor(private waxSigningURL: string = "http://localhost:3000") {
     this.openEventSource = this.openEventSource.bind(this);
     this.onceEvent = this.onceEvent.bind(this);
-    this.iframeContainer =null;
+    this.iframeContainer = null;
     this.iframe = null;
   }
-  public setupIframe(){
-    if(!this.iframeContainer) {
+  public setupIframe() {
+    if (!this.iframeContainer) {
       this.iframeContainer = document.createElement("div");
     }
     this.iframeContainer.style.zIndex = 5000;
@@ -19,7 +19,8 @@ export class WaxEventSource {
     this.iframeContainer.style.maxWidth = "800px";
     this.iframeContainer.style.height = "100%";
     this.iframeContainer.style.overflowY = "scroll";
-    this.iframeContainer.innerHTML = "<div style='position:absolute;cursor: pointer; width:50px;z-index: 10; font-size:36px; font-weight: 800; border: solid 4px #000000; height:50px; color:black; right:1px; top:10px; background: #fff; border-radius: 50%; text-align: center; vertical-align: center' onclick='globalThis.waxjs.closeIframe()'>X</div> ";
+    this.iframeContainer.innerHTML =
+      "<div style='position:absolute;cursor: pointer; width:50px;z-index: 10; font-size:36px; font-weight: 800; border: solid 4px #000000; height:50px; color:black; right:1px; top:10px; background: #fff; border-radius: 50%; text-align: center; vertical-align: center' onclick='globalThis.waxjs.closeIframe()'>X</div> ";
 
     /*
     this.closeButton = document.createElement("div");
@@ -32,25 +33,25 @@ export class WaxEventSource {
     this.closeButton.innerHTML = "X";
     this.closeButton.style.textAlign = "center";
     */
-    if(!this.iframe) {
+    if (!this.iframe) {
       this.iframe = document.createElement("iframe");
     }
-    this.iframe.src = this.waxSigningURL+ "/cloud-wallet/signing/";
+    this.iframe.src = this.waxSigningURL + "/cloud-wallet/signing/";
     this.iframe.style.position = "absolute";
     this.iframe.style.width = "100%";
     this.iframe.style.height = "800px";
     this.iframe.style.left = "0%";
     this.iframe.style.top = "0px";
-    globalThis.waxjs = {closeIframe : this.closeIframe.bind(this)};
+    globalThis.waxjs = { closeIframe: this.closeIframe.bind(this) };
   }
-  public showIframe(){
+  public showIframe() {
     this.setupIframe();
     document.body.append(this.iframeContainer);
     this.iframeContainer.append(this.iframe);
     return this.iframe.contentWindow;
   }
-  public closeIframe(){
-    if(this.iframeContainer) {
+  public closeIframe() {
+    if (this.iframeContainer) {
       this.iframeContainer.remove();
     }
   }
@@ -65,8 +66,6 @@ export class WaxEventSource {
 
     if (!openedWindow) {
       openedWindow = this.showIframe();
-      // we dont throw an error now instead we handle ith iframe
-      // throw new Error("Unable to open a popup window");
     }
 
     if (typeof message === "undefined") {
@@ -125,7 +124,7 @@ export class WaxEventSource {
             const result: any = await action(event);
             resolve(result);
           } catch (e) {
-            if(globalThis.waxjs.closeIframe()) {
+            if (globalThis.waxjs.closeIframe()) {
               globalThis.waxjs.closeIframe();
             }
             reject(e);
