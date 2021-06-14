@@ -8,7 +8,9 @@ export class WaxEventSource {
     this.iframe = null;
   }
   public setupIframe(){
-    this.iframeContainer = document.createElement("div");
+    if(!this.iframeContainer) {
+      this.iframeContainer = document.createElement("div");
+    }
     this.iframeContainer.style.zIndex = 5000;
     this.iframeContainer.style.position = "fixed";
     this.iframeContainer.style.alignSelf = "center";
@@ -30,7 +32,9 @@ export class WaxEventSource {
     this.closeButton.innerHTML = "X";
     this.closeButton.style.textAlign = "center";
     */
-    this.iframe = document.createElement("iframe");
+    if(!this.iframe) {
+      this.iframe = document.createElement("iframe");
+    }
     this.iframe.src = this.waxSigningURL+ "/cloud-wallet/signing/";
     this.iframe.style.position = "absolute";
     this.iframe.style.width = "100%";
@@ -119,11 +123,11 @@ export class WaxEventSource {
 
           try {
             const result: any = await action(event);
-            if(globalThis.closeIframe()) {
-              globalThis.waxjs.closeIframe();
-            }
             resolve(result);
           } catch (e) {
+            if(globalThis.waxjs.closeIframe()) {
+              globalThis.waxjs.closeIframe();
+            }
             reject(e);
           }
 
