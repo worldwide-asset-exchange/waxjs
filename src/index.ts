@@ -57,7 +57,6 @@ export class WaxJS {
         return false;
       }
     }
-    return false;
   }
 
   private async loginViaWindow() {
