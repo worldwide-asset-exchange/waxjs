@@ -22,17 +22,16 @@ export class WaxEventSource {
     }
 
     const postTransaction = async (event: any) => {
-      if (event.data.type === "READY") {
-        // @ts-ignore
-        openedWindow.postMessage(message, this.waxSigningURL);
-      }
+      // @ts-ignore
+      openedWindow.postMessage(message, this.waxSigningURL);
     };
 
     const eventPromise = this.onceEvent(
       // @ts-ignore
       openedWindow,
       this.waxSigningURL,
-      postTransaction
+      postTransaction,
+      'READY'
     );
 
     await Promise.race([eventPromise, this.timeout()]).catch(err => {
@@ -49,7 +48,8 @@ export class WaxEventSource {
   public async onceEvent(
     source: Window,
     origin: string,
-    action: (e: any) => void
+    action: (e: any) => void,
+    type: string = null
   ) {
     return new Promise((resolve, reject) => {
       (window as Window).addEventListener(
@@ -66,6 +66,10 @@ export class WaxEventSource {
           }
 
           if (typeof event.data !== "object") {
+            return;
+          }
+
+          if (type != null && event.data.type !== type) {
             return;
           }
 
