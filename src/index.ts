@@ -1,8 +1,8 @@
 import { Api, JsonRpc } from "eosjs";
 import {
-  SignatureProvider,
+  AbiProvider,
   AuthorityProvider,
-  AbiProvider
+  SignatureProvider
 } from "eosjs/dist/eosjs-api-interfaces";
 import { IWhitelistedContract } from "./IWhitelistedContract";
 import { WaxEventSource } from "./WaxEventSource";
@@ -20,9 +20,11 @@ export class WaxJS {
   private waxAutoSigningURL: string;
   private eosApiArgs: any;
   private freeBandwidth: boolean;
-  private verifyTx: {
-    (userAccount: string, originalTx: any, augmentedTx: any): void;
-  };
+  private verifyTx: (
+    userAccount: string,
+    originalTx: any,
+    augmentedTx: any
+  ) => void;
 
   constructor({
     rpcEndpoint,
@@ -45,9 +47,7 @@ export class WaxJS {
     waxAutoSigningURL: string;
     eosApiArgs: any;
     freeBandwidth: boolean;
-    verifyTx: {
-      (userAccount: string, originalTx: any, augmentedTx: any): void;
-    };
+    verifyTx: (userAccount: string, originalTx: any, augmentedTx: any) => void;
   }) {
     this.waxEventSource = new WaxEventSource(waxSigningURL);
     this.rpc = new JsonRpc(rpcEndpoint);
@@ -159,8 +159,8 @@ export class WaxJS {
           serializedTransaction: any;
           signatures: string[];
         } = await this.signing({
-          transaction: data.serializedTransaction,
-          freeBandwidth: !this.apiSigner && this.freeBandwidth
+          freeBandwidth: !this.apiSigner && this.freeBandwidth,
+          transaction: data.serializedTransaction
         });
 
         const originalTx = await this.api.deserializeTransactionWithActions(
@@ -252,8 +252,8 @@ export class WaxJS {
     try {
       const response: any = await fetch(this.waxAutoSigningURL + "signing", {
         body: JSON.stringify({
-          transaction: Object.values(transaction),
-          freeBandwidth
+          freeBandwidth,
+          transaction: Object.values(transaction)
         }),
         credentials: "include",
         headers: {
@@ -297,10 +297,10 @@ export class WaxJS {
 
   private async receiveSignatures(event: any): Promise<any> {
     if (event.data.type === "TX_SIGNED") {
-      let {
+      const {
         verified,
-        signatures,
         serializedTransaction,
+        signatures,
         whitelistedContracts
       } = event.data;
       if (!verified || signatures == null) {
@@ -309,8 +309,8 @@ export class WaxJS {
       this.whitelistedContracts = whitelistedContracts || [];
 
       return {
-        signatures,
-        serializedTransaction: Uint8Array.from(serializedTransaction)
+        serializedTransaction: Uint8Array.from(serializedTransaction),
+        signatures
       };
     } else if (event.data.type !== "READY") {
       throw new Error(
