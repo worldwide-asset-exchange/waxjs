@@ -10,6 +10,17 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v1.0.1
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+
+BUG FIXES:
+- Make the constructor arguments aside from rpc endpoint optional to improve usage and reduce typescript warnings
+
 ## v1.0.0
 
 BREAKING CHANGES:

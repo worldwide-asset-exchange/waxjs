@@ -41,13 +41,13 @@ export class WaxJS {
     rpcEndpoint: string;
     userAccount?: string;
     pubKeys?: string[];
-    tryAutoLogin: boolean;
+    tryAutoLogin?: boolean;
     apiSigner?: SignatureProvider;
-    waxSigningURL: string;
-    waxAutoSigningURL: string;
-    eosApiArgs: any;
-    freeBandwidth: boolean;
-    verifyTx: (userAccount: string, originalTx: any, augmentedTx: any) => void;
+    waxSigningURL?: string;
+    waxAutoSigningURL?: string;
+    eosApiArgs?: any;
+    freeBandwidth?: boolean;
+    verifyTx?: (userAccount: string, originalTx: any, augmentedTx: any) => void;
   }) {
     this.waxEventSource = new WaxEventSource(waxSigningURL);
     this.rpc = new JsonRpc(rpcEndpoint);
