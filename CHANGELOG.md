@@ -10,6 +10,18 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v1.0.0
+
+BREAKING CHANGES:
+- Constructor accepts an initialization object rather than a list
+
+FEATURES:
+- Ability for WAX to inject a noop to manage bandwidth for waxjs users and contracts
+
+IMPROVEMENTS:
+
+BUG FIXES:
+
 ## v0.0.15
 
 BREAKING CHANGES:
