@@ -10,6 +10,17 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v1.0.2
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+- Made the default verifier function more flexible so as to allow ram purchase actions to be injected into boosted transactions
+
+BUG FIXES:
+
 ## v1.0.1
 
 BREAKING CHANGES:

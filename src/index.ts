@@ -334,34 +334,10 @@ function defaultTxVerifier(
   const { actions: augmentedActions } = augmentedTx;
 
   if (
-    augmentedActions.length !== originalActions.length &&
-    augmentedActions.length !== originalActions.length + 1
-  ) {
-    throw new Error(
-      `Augmented transaction actions length mismatch.\nOriginal: ${JSON.stringify(
-        originalActions,
-        undefined,
-        2
-      )}\nAugmented: ${JSON.stringify(augmentedActions, undefined, 2)}`
-    );
-  }
-
-  if (augmentedActions.length === originalActions.length) {
-    if (JSON.stringify(originalActions) !== JSON.stringify(augmentedActions)) {
-      throw new Error(
-        `Augmented transaction actions has modified actions from the original.\nOriginal: ${JSON.stringify(
-          originalActions,
-          undefined,
-          2
-        )}\nAugmented: ${JSON.stringify(augmentedActions, undefined, 2)}`
-      );
-    }
-    return;
-  }
-
-  if (
     JSON.stringify(originalActions) !==
-    JSON.stringify(augmentedActions.slice(1))
+    JSON.stringify(
+      augmentedActions.slice(augmentedActions.length - originalActions.length)
+    )
   ) {
     throw new Error(
       `Augmented transaction actions has modified actions from the original.\nOriginal: ${JSON.stringify(
@@ -372,18 +348,22 @@ function defaultTxVerifier(
     );
   }
 
-  const extraAction = augmentedActions.shift();
-  const userAuthedAction = extraAction.authorization.find((auth: any) => {
-    return auth.actor === userAccount;
-  });
+  for (const extraAction of augmentedActions.slice(
+    0,
+    augmentedActions.length - originalActions.length
+  )) {
+    const userAuthedAction = extraAction.authorization.find((auth: any) => {
+      return auth.actor === userAccount;
+    });
 
-  if (userAuthedAction) {
-    throw new Error(
-      `Augmented transaction actions has an extra action from the original authorizing the user.\nOriginal: ${JSON.stringify(
-        originalActions,
-        undefined,
-        2
-      )}\nAugmented: ${JSON.stringify(augmentedActions, undefined, 2)}`
-    );
+    if (userAuthedAction) {
+      throw new Error(
+        `Augmented transaction actions has an extra action from the original authorizing the user.\nOriginal: ${JSON.stringify(
+          originalActions,
+          undefined,
+          2
+        )}\nAugmented: ${JSON.stringify(augmentedActions, undefined, 2)}`
+      );
+    }
   }
 }
