@@ -1,206 +1,246 @@
-import {Transaction} from 'eosjs/dist/eosjs-api-interfaces';
-import {Action} from 'eosjs/dist/eosjs-serialize';
-import {ILoginResponse, ISigningResponse, IWhitelistedContract} from "./interfaces";
-import {WaxEventSource} from './WaxEventSource';
+import { Transaction } from "eosjs/dist/eosjs-api-interfaces";
+import { Action } from "eosjs/dist/eosjs-serialize";
+import {
+  ILoginResponse,
+  ISigningResponse,
+  IWhitelistedContract
+} from "./interfaces";
+import { WaxEventSource } from "./WaxEventSource";
 
 export class WaxSigningApi {
-    private waxEventSource: WaxEventSource;
+  private waxEventSource: WaxEventSource;
 
-    private user?: ILoginResponse;
+  private user?: ILoginResponse;
 
-    private signingWindow?: Window;
+  private signingWindow?: Window;
 
-    private whitelistedContracts?: IWhitelistedContract[];
+  private whitelistedContracts?: IWhitelistedContract[];
 
-    constructor(readonly waxSigningURL: string, readonly waxAutoSigningURL: string) {
-        this.waxEventSource = new WaxEventSource(waxSigningURL);
+  constructor(
+    readonly waxSigningURL: string,
+    readonly waxAutoSigningURL: string
+  ) {
+    this.waxEventSource = new WaxEventSource(waxSigningURL);
+  }
+
+  public async login(): Promise<ILoginResponse> {
+    if (!this.user) {
+      await this.loginViaWindow();
     }
 
-    public async login(): Promise<ILoginResponse> {
-        if (!this.user) {
-            await this.loginViaWindow();
-        }
-
-        if (this.user) {
-            return this.user;
-        }
-
-        throw new Error('Login failed');
+    if (this.user) {
+      return this.user;
     }
 
-    public async tryAutologin(): Promise<boolean> {
-        if (this.user) {
-            return true;
-        }
-        try {
-            await this.loginViaEndpoint();
+    throw new Error("Login failed");
+  }
 
-            return true;
-        } catch (e) {
-            return false;
-        }
+  public async tryAutologin(): Promise<boolean> {
+    if (this.user) {
+      return true;
+    }
+    try {
+      await this.loginViaEndpoint();
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  public async prepareTransaction(transaction: Transaction): Promise<void> {
+    if (!this.canAutoSign(transaction)) {
+      this.signingWindow = await this.waxEventSource.openPopup(
+        `${this.waxSigningURL}/cloud-wallet/signing/`
+      );
+    }
+  }
+
+  public async signing(
+    transaction: Transaction,
+    serializedTransaction: Uint8Array,
+    noModify = false
+  ): Promise<ISigningResponse> {
+    if (this.canAutoSign(transaction)) {
+      try {
+        return await this.signViaEndpoint(serializedTransaction, noModify);
+      } catch {
+        // handle by continuing
+      }
     }
 
-    public async prepareTransaction(transaction: Transaction): Promise<void> {
-        if (!this.canAutoSign(transaction)) {
-            this.signingWindow = await this.waxEventSource.openPopup(`${this.waxSigningURL}/cloud-wallet/signing/`);
-        }
+    return await this.signViaWindow(
+      serializedTransaction,
+      this.signingWindow,
+      noModify
+    );
+  }
+
+  private async loginViaWindow(): Promise<boolean> {
+    const confirmationWindow = await this.waxEventSource.openEventSource(
+      `${this.waxSigningURL}/cloud-wallet/login/`
+    );
+
+    return this.waxEventSource.onceEvent(
+      confirmationWindow,
+      this.waxSigningURL,
+      this.receiveLogin.bind(this),
+      undefined
+    );
+  }
+
+  private async loginViaEndpoint(): Promise<boolean> {
+    const response = await fetch(`${this.waxAutoSigningURL}login`, {
+      credentials: "include",
+      method: "get"
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Login Endpoint Error ${response.status} ${response.statusText}`
+      );
     }
 
-    public async signing(
-        transaction: Transaction,
-        serializedTransaction: Uint8Array,
-        noModify = false
-    ): Promise<ISigningResponse> {
-        if (this.canAutoSign(transaction)) {
-            try {
-                return await this.signViaEndpoint(serializedTransaction, noModify);
-            } catch {
-                // handle by continuing
-            }
-        }
+    const data = await response.json();
 
-        return await this.signViaWindow(serializedTransaction, this.signingWindow, noModify);
+    if (data.processed && data.processed.except) {
+      throw new Error(data);
     }
 
-    private async loginViaWindow(): Promise<boolean> {
-        const confirmationWindow = await this.waxEventSource.openEventSource(
-            `${this.waxSigningURL}/cloud-wallet/login/`
-        );
+    return this.receiveLogin({ data });
+  }
 
-        return this.waxEventSource.onceEvent(
-            confirmationWindow,
-            this.waxSigningURL,
-            this.receiveLogin.bind(this),
-            undefined
-        );
+  private async signViaEndpoint(
+    serializedTransaction: Uint8Array,
+    noModify = false
+  ): Promise<ISigningResponse> {
+    const controller = new AbortController();
+
+    setTimeout(() => controller.abort(), 5000);
+
+    const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
+      body: JSON.stringify({
+        transaction: Object.values(serializedTransaction),
+        freeBandwidth: !noModify
+      }),
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      this.whitelistedContracts = [];
+
+      throw new Error(
+        `Signing Endpoint Error ${response.status} ${response.statusText}`
+      );
     }
 
-    private async loginViaEndpoint(): Promise<boolean> {
-        const response = await fetch(`${this.waxAutoSigningURL}login`, {
-            credentials: 'include',
-            method: 'get'
-        });
+    const data: any = await response.json();
 
-        if (!response.ok) {
-            throw new Error(`Login Endpoint Error ${response.status} ${response.statusText}`);
-        }
+    if (data.processed && data.processed.except) {
+      this.whitelistedContracts = [];
 
-        const data = await response.json();
-
-        if (data.processed && data.processed.except) {
-            throw new Error(data);
-        }
-
-        return this.receiveLogin({data});
+      throw new Error(
+        `Error returned from signing endpoint: ${JSON.stringify(data)}`
+      );
     }
 
-    private async signViaEndpoint(serializedTransaction: Uint8Array, noModify = false): Promise<ISigningResponse> {
-        const controller = new AbortController();
+    return this.receiveSignatures({ data });
+  }
 
-        setTimeout(() => controller.abort(), 5000);
+  private async signViaWindow(
+    serializedTransaction: Uint8Array,
+    window?: Window,
+    noModify = false
+  ): Promise<ISigningResponse> {
+    const confirmationWindow: Window = await this.waxEventSource.openEventSource(
+      `${this.waxSigningURL}/cloud-wallet/signing/`,
+      {
+        type: "TRANSACTION",
+        transaction: serializedTransaction,
+        freeBandwidth: !noModify
+      },
+      window
+    );
 
-        const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
-            body: JSON.stringify({transaction: Object.values(serializedTransaction), freeBandwidth: !noModify}),
-            credentials: 'include',
-            headers: {'Content-Type': 'application/json'},
-            method: 'POST',
-            signal: controller.signal
-        });
+    return this.waxEventSource.onceEvent(
+      confirmationWindow,
+      this.waxSigningURL,
+      this.receiveSignatures.bind(this),
+      "TX_SIGNED"
+    );
+  }
 
-        if (!response.ok) {
-            this.whitelistedContracts = [];
+  private async receiveLogin(event: { data: any }): Promise<boolean> {
+    const { verified, userAccount, pubKeys, whitelistedContracts } = event.data;
 
-            throw new Error(`Signing Endpoint Error ${response.status} ${response.statusText}`);
-        }
-
-        const data: any = await response.json();
-
-        if (data.processed && data.processed.except) {
-            this.whitelistedContracts = [];
-
-            throw new Error(`Error returned from signing endpoint: ${JSON.stringify(data)}`);
-        }
-
-        return this.receiveSignatures({data});
+    if (!verified) {
+      throw new Error("User declined to share their user account");
     }
 
-    private async signViaWindow(
-        serializedTransaction: Uint8Array,
-        window?: Window,
-        noModify = false
-    ): Promise<ISigningResponse> {
-        const confirmationWindow: Window = await this.waxEventSource.openEventSource(
-            `${this.waxSigningURL}/cloud-wallet/signing/`,
-            {type: 'TRANSACTION', transaction: serializedTransaction, freeBandwidth: !noModify},
-            window
-        );
-
-        return this.waxEventSource.onceEvent(
-            confirmationWindow,
-            this.waxSigningURL,
-            this.receiveSignatures.bind(this),
-            'TX_SIGNED'
-        );
+    if (!userAccount || !pubKeys) {
+      throw new Error("User does not have a blockchain account");
     }
 
-    private async receiveLogin(event: { data: any }): Promise<boolean> {
-        const {verified, userAccount, pubKeys, whitelistedContracts} = event.data;
+    this.whitelistedContracts = whitelistedContracts || [];
+    this.user = { account: userAccount, keys: pubKeys };
 
-        if (!verified) {
-            throw new Error('User declined to share their user account');
+    return true;
+  }
+
+  private async receiveSignatures(event: {
+    data: any;
+  }): Promise<ISigningResponse> {
+    if (event.data.type === "TX_SIGNED") {
+      const {
+        verified,
+        signatures,
+        whitelistedContracts,
+        serializedTransaction
+      } = event.data;
+
+      if (!verified || !signatures) {
+        throw new Error("User declined to sign the transaction");
+      }
+
+      this.whitelistedContracts = whitelistedContracts || [];
+
+      return { serializedTransaction, signatures };
+    }
+
+    throw new Error(
+      `Unexpected response received when attempting signing: ${JSON.stringify(
+        event.data
+      )}`
+    );
+  }
+
+  private canAutoSign(transaction: Transaction): boolean {
+    const ua = navigator.userAgent.toLowerCase();
+
+    if (ua.search("chrome") === -1 && ua.search("safari") >= 0) {
+      return false;
+    }
+
+    return !transaction.actions.find(action => !this.isWhitelisted(action));
+  }
+
+  private isWhitelisted(action: Action): boolean {
+    return !!(
+      this.whitelistedContracts &&
+      !!this.whitelistedContracts.find((w: any) => {
+        if (w.contract === action.account) {
+          if (action.account === "eosio.token" && action.name === "transfer") {
+            return w.recipients.includes(action.data.to);
+          }
+
+          return true;
         }
 
-        if (!userAccount || !pubKeys) {
-            throw new Error('User does not have a blockchain account');
-        }
-
-        this.whitelistedContracts = whitelistedContracts || [];
-        this.user = {account: userAccount, keys: pubKeys};
-
-        return true;
-    }
-
-    private async receiveSignatures(event: { data: any }): Promise<ISigningResponse> {
-        if (event.data.type === 'TX_SIGNED') {
-            const {verified, signatures, whitelistedContracts, serializedTransaction} = event.data;
-
-            if (!verified || !signatures) {
-                throw new Error('User declined to sign the transaction');
-            }
-
-            this.whitelistedContracts = whitelistedContracts || [];
-
-            return {serializedTransaction, signatures};
-        }
-
-        throw new Error(`Unexpected response received when attempting signing: ${JSON.stringify(event.data)}`);
-    }
-
-    private canAutoSign(transaction: Transaction): boolean {
-        const ua = navigator.userAgent.toLowerCase();
-
-        if (ua.search('chrome') === -1 && ua.search('safari') >= 0) {
-            return false;
-        }
-
-        return !transaction.actions.find(action => !this.isWhitelisted(action));
-    }
-
-    private isWhitelisted(action: Action): boolean {
-        return !!(
-            this.whitelistedContracts &&
-            !!this.whitelistedContracts.find((w: any) => {
-                if (w.contract === action.account) {
-                    if (action.account === 'eosio.token' && action.name === 'transfer') {
-                        return w.recipients.includes(action.data.to);
-                    }
-
-                    return true;
-                }
-
-                return false;
-            })
-        );
-    }
+        return false;
+      })
+    );
+  }
 }
