@@ -120,8 +120,8 @@ export class WaxSigningApi {
 
     const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
       body: JSON.stringify({
-        transaction: Object.values(serializedTransaction),
-        freeBandwidth: !noModify
+        freeBandwidth: !noModify,
+        transaction: Object.values(serializedTransaction)
       }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -158,9 +158,9 @@ export class WaxSigningApi {
     const confirmationWindow: Window = await this.waxEventSource.openEventSource(
       `${this.waxSigningURL}/cloud-wallet/signing/`,
       {
-        type: "TRANSACTION",
+        freeBandwidth: !noModify,
         transaction: serializedTransaction,
-        freeBandwidth: !noModify
+        type: "TRANSACTION"
       },
       window
     );
