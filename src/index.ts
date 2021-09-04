@@ -110,7 +110,7 @@ export class WaxJS {
         const {
           serializedTransaction,
           signatures
-        } = await this.waxApi.signing(originalTx, sigArgs.serializedTransaction, this.freeBandwidth);
+        } = await this.waxApi.signing(originalTx, sigArgs.serializedTransaction, !this.freeBandwidth);
 
 
         const augmentedTx = await this.api.deserializeTransactionWithActions(
