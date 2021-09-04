@@ -1,9 +1,9 @@
-import { Transaction } from 'eosjs/dist/eosjs-api-interfaces';
-import { Action } from 'eosjs/dist/eosjs-serialize';
+import {Transaction} from 'eosjs/dist/eosjs-api-interfaces';
+import {Action} from 'eosjs/dist/eosjs-serialize';
 import {ILoginResponse, ISigningResponse, IWhitelistedContract} from "./interfaces";
-import { WaxEventSource } from './WaxEventSource';
+import {WaxEventSource} from './WaxEventSource';
 
-export class WaxApi {
+export class WaxSigningApi {
     private waxEventSource: WaxEventSource;
 
     private user?: ILoginResponse;
@@ -92,7 +92,7 @@ export class WaxApi {
             throw new Error(data);
         }
 
-        return this.receiveLogin({ data });
+        return this.receiveLogin({data});
     }
 
     private async signViaEndpoint(serializedTransaction: Uint8Array, noModify = false): Promise<ISigningResponse> {
@@ -101,9 +101,9 @@ export class WaxApi {
         setTimeout(() => controller.abort(), 5000);
 
         const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
-            body: JSON.stringify({ transaction: Object.values(serializedTransaction), freeBandwidth: !noModify }),
+            body: JSON.stringify({transaction: Object.values(serializedTransaction), freeBandwidth: !noModify}),
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             method: 'POST',
             signal: controller.signal
         });
@@ -122,7 +122,7 @@ export class WaxApi {
             throw new Error(`Error returned from signing endpoint: ${JSON.stringify(data)}`);
         }
 
-        return this.receiveSignatures({ data });
+        return this.receiveSignatures({data});
     }
 
     private async signViaWindow(
@@ -132,7 +132,7 @@ export class WaxApi {
     ): Promise<ISigningResponse> {
         const confirmationWindow: Window = await this.waxEventSource.openEventSource(
             `${this.waxSigningURL}/cloud-wallet/signing/`,
-            { type: 'TRANSACTION', transaction: serializedTransaction, freeBandwidth: !noModify },
+            {type: 'TRANSACTION', transaction: serializedTransaction, freeBandwidth: !noModify},
             window
         );
 
@@ -145,7 +145,7 @@ export class WaxApi {
     }
 
     private async receiveLogin(event: { data: any }): Promise<boolean> {
-        const { verified, userAccount, pubKeys, whitelistedContracts } = event.data;
+        const {verified, userAccount, pubKeys, whitelistedContracts} = event.data;
 
         if (!verified) {
             throw new Error('User declined to share their user account');
@@ -163,7 +163,7 @@ export class WaxApi {
 
     private async receiveSignatures(event: { data: any }): Promise<ISigningResponse> {
         if (event.data.type === 'TX_SIGNED') {
-            const { verified, signatures, whitelistedContracts, serializedTransaction } = event.data;
+            const {verified, signatures, whitelistedContracts, serializedTransaction} = event.data;
 
             if (!verified || !signatures) {
                 throw new Error('User declined to sign the transaction');
@@ -171,7 +171,7 @@ export class WaxApi {
 
             this.whitelistedContracts = whitelistedContracts || [];
 
-            return { serializedTransaction, signatures };
+            return {serializedTransaction, signatures};
         }
 
         throw new Error(`Unexpected response received when attempting signing: ${JSON.stringify(event.data)}`);

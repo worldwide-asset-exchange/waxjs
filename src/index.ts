@@ -3,7 +3,7 @@ import {
   SignatureProvider, Transaction
 } from "eosjs/dist/eosjs-api-interfaces";
 import {ILoginResponse} from "./interfaces";
-import {WaxApi} from "./WaxApi";
+import {WaxSigningApi} from "./WaxSigningApi";
 
 export class WaxJS {
   public readonly rpc: JsonRpc;
@@ -11,7 +11,7 @@ export class WaxJS {
   public api: Api;
   public user?: ILoginResponse;
 
-  private waxApi: WaxApi;
+  private signingApi: WaxSigningApi;
 
   private readonly apiSigner: SignatureProvider;
   private readonly waxSigningURL: string;
@@ -47,7 +47,7 @@ export class WaxJS {
     freeBandwidth?: boolean;
     verifyTx?: (user: ILoginResponse, originalTx: Transaction, augmentedTx: Transaction) => void;
   }) {
-    this.waxApi = new WaxApi(waxSigningURL, waxAutoSigningURL);
+    this.signingApi = new WaxSigningApi(waxSigningURL, waxAutoSigningURL);
     this.rpc = new JsonRpc(rpcEndpoint);
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
@@ -62,9 +62,9 @@ export class WaxJS {
     } else {
       // try to auto-login via endpoint
       if (tryAutoLogin) {
-        this.waxApi.tryAutologin().then(async (response) => {
+        this.signingApi.tryAutologin().then(async (response) => {
           if (response) {
-            this.receiveLogin(await this.waxApi.login());
+            this.receiveLogin(await this.signingApi.login());
           }
         });
       }
@@ -73,7 +73,7 @@ export class WaxJS {
 
   public async login(): Promise<string> {
     if (!this.user) {
-      this.receiveLogin(await this.waxApi.login())
+      this.receiveLogin(await this.signingApi.login())
     }
 
     return this.user.account;
@@ -82,8 +82,8 @@ export class WaxJS {
   public async isAutoLoginAvailable(): Promise<boolean> {
     if (this.user) {
       return true;
-    } else if (await this.waxApi.tryAutologin()) {
-      this.receiveLogin(await this.waxApi.login());
+    } else if (await this.signingApi.tryAutologin()) {
+      this.receiveLogin(await this.signingApi.login());
 
       return true;
     }
@@ -110,7 +110,7 @@ export class WaxJS {
         const {
           serializedTransaction,
           signatures
-        } = await this.waxApi.signing(originalTx, sigArgs.serializedTransaction, !this.freeBandwidth);
+        } = await this.signingApi.signing(originalTx, sigArgs.serializedTransaction, !this.freeBandwidth);
 
 
         const augmentedTx = await this.api.deserializeTransactionWithActions(
@@ -145,7 +145,7 @@ export class WaxJS {
     // we ensure that it is not going to be rejected due to a delayed
     // pop up that would otherwise occur post transaction creation
     this.api.transact = async (transaction, namedParams) => {
-      await this.waxApi.prepareTransaction(transaction);
+      await this.signingApi.prepareTransaction(transaction);
 
       return await transact(transaction, namedParams);
     };
