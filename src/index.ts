@@ -25,6 +25,10 @@ export class WaxJS {
     augmentedTx: Transaction
   ) => void;
 
+  public get userAccount() {
+    return this.user && this.user.account;
+  }
+
   constructor({
     rpcEndpoint,
     tryAutoLogin = true,
