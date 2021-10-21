@@ -29,6 +29,10 @@ export class WaxJS {
     return this.user && this.user.account;
   }
 
+  public get pubKeys() {
+    return this.user && this.user.keys;
+  }
+
   constructor({
     rpcEndpoint,
     tryAutoLogin = true,

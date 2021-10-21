@@ -10,6 +10,17 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v1.0.4
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+
+BUG FIXES:
+- pubKeys getter for backwards compatibility
+
 ## v1.0.3
 
 BREAKING CHANGES:
