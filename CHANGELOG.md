@@ -10,6 +10,18 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+## v1.0.3
+
+BREAKING CHANGES:
+
+FEATURES:
+
+IMPROVEMENTS:
+- Signing API factored out, allowing a slimmer library for UAL type libraries which do not need the extra baggage of havimg eosjs bundled in.
+
+BUG FIXES:
+- Filters unexpected responses from the WAX backend that may erroneously come more than once
+
 ## v1.0.2
 
 BREAKING CHANGES:
