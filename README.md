@@ -4,7 +4,7 @@ Javascript API for integration with the WAX Cloud Wallet.
 
 ## Documentation
 
-[Check the WAX developer portal for full instructions](https://developer.wax.io/waa/waxjs-overview/)
+[Check the WAX developer portal for full instructions](https://developer.wax.io/docs/wax-cloud-wallet/waxjs/)
 
 ## Installation
 
