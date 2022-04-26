@@ -1,0 +1,26 @@
+name: Feature Request
+description: Proposal for a feature for WaxJS
+labels: 'template: feature'
+body:
+  - type: markdown
+    attributes:
+      value: We would like to thank you for taking time to submit a feature request for WaxJS package.
+
+  - type: textarea
+    attributes:
+      label: Describe the feature
+      description: Describe how the feature should work and it's API
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Why do you believe it's necessary
+      description: Why do you believe this feature is necessary and what benefit it gives to who uses the package.
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Would you be willing to work on a PR?
+      description: Would you be willing to implement this feature into WaxJS?
