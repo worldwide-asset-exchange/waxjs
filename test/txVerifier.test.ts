@@ -280,7 +280,7 @@ describe("test default tx verifier", function() {
           ],
           data: {
             from: user.account,
-            to: "boost.wax",
+            to: "gasfee.wax",
             quantity: "0.01000000 WAX",
             memo: "WAX fee for 10 us CPU and 10 words NET"
           }
