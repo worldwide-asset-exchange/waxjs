@@ -19,6 +19,7 @@ export class WaxJS {
   private readonly waxAutoSigningURL: string;
   private readonly eosApiArgs: any;
   private readonly freeBandwidth: boolean;
+  private readonly feeFallback: boolean;
   private readonly verifyTx: (
     user: ILoginResponse,
     originalTx: Transaction,
@@ -43,6 +44,7 @@ export class WaxJS {
     waxAutoSigningURL = "https://api-idm.wax.io/v1/accounts/auto-accept/",
     eosApiArgs = {},
     freeBandwidth = true,
+    feeFallback = true,
     verifyTx = defaultTxVerifier
   }: {
     rpcEndpoint: string;
@@ -54,6 +56,7 @@ export class WaxJS {
     waxAutoSigningURL?: string;
     eosApiArgs?: any;
     freeBandwidth?: boolean;
+    feeFallback?: boolean;
     verifyTx?: (
       user: ILoginResponse,
       originalTx: Transaction,
@@ -67,6 +70,7 @@ export class WaxJS {
     this.apiSigner = apiSigner;
     this.eosApiArgs = eosApiArgs;
     this.freeBandwidth = freeBandwidth;
+    this.feeFallback = feeFallback;
     this.verifyTx = verifyTx;
 
     if (userAccount && Array.isArray(pubKeys)) {
@@ -126,7 +130,8 @@ export class WaxJS {
         } = await this.signingApi.signing(
           originalTx,
           sigArgs.serializedTransaction,
-          !this.freeBandwidth
+          !this.freeBandwidth,
+          this.feeFallback
         );
 
         const augmentedTx = await this.api.deserializeTransactionWithActions(
@@ -168,7 +173,7 @@ export class WaxJS {
   }
 }
 
-function defaultTxVerifier(
+export function defaultTxVerifier(
   user: ILoginResponse,
   originalTx: Transaction,
   augmentedTx: Transaction
@@ -200,6 +205,40 @@ function defaultTxVerifier(
     });
 
     if (userAuthedAction) {
+      if (
+        extraAction.account === "eosio.token" &&
+        extraAction.name === "transfer"
+      ) {
+        const noopAction = augmentedActions[0];
+        if (
+          extraAction.data.to === "boost.wax" &&
+          extraAction.data.memo.startsWith("WAX fee for ") &&
+          JSON.stringify(noopAction) ===
+            JSON.stringify({
+              account: "boost.wax",
+              name: "noop",
+              authorization: [
+                {
+                  actor: "boost.wax",
+                  permission: "paybw"
+                }
+              ],
+              data: {}
+            })
+        ) {
+          continue;
+        }
+      }
+
+      if (
+        extraAction.account === "eosio" &&
+        extraAction.name === "buyrambytes"
+      ) {
+        if (extraAction.data.receiver === user.account) {
+          continue;
+        }
+      }
+
       throw new Error(
         `Augmented transaction actions has an extra action from the original authorizing the user.\nOriginal: ${JSON.stringify(
           originalActions,

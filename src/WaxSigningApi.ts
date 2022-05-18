@@ -59,11 +59,16 @@ export class WaxSigningApi {
   public async signing(
     transaction: Transaction,
     serializedTransaction: Uint8Array,
-    noModify = false
+    noModify = false,
+    feeFallback = true
   ): Promise<ISigningResponse> {
     if (this.canAutoSign(transaction)) {
       try {
-        return await this.signViaEndpoint(serializedTransaction, noModify);
+        return await this.signViaEndpoint(
+          serializedTransaction,
+          noModify,
+          feeFallback
+        );
       } catch {
         // handle by continuing
       }
@@ -112,7 +117,8 @@ export class WaxSigningApi {
 
   private async signViaEndpoint(
     serializedTransaction: Uint8Array,
-    noModify = false
+    noModify = false,
+    feeFallback = true
   ): Promise<ISigningResponse> {
     const controller = new AbortController();
 
@@ -121,6 +127,7 @@ export class WaxSigningApi {
     const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
       body: JSON.stringify({
         freeBandwidth: !noModify,
+        feeFallback,
         transaction: Object.values(serializedTransaction)
       }),
       credentials: "include",
@@ -153,11 +160,13 @@ export class WaxSigningApi {
   private async signViaWindow(
     serializedTransaction: Uint8Array,
     window?: Window,
-    noModify = false
+    noModify = false,
+    feeFallback = true
   ): Promise<ISigningResponse> {
     const confirmationWindow: Window = await this.waxEventSource.openEventSource(
       `${this.waxSigningURL}/cloud-wallet/signing/`,
       {
+        feeFallback,
         freeBandwidth: !noModify,
         transaction: serializedTransaction,
         type: "TRANSACTION"
