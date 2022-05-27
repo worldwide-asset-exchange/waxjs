@@ -77,7 +77,8 @@ export class WaxSigningApi {
     return await this.signViaWindow(
       serializedTransaction,
       this.signingWindow,
-      noModify
+      noModify,
+      feeFallback
     );
   }
 
