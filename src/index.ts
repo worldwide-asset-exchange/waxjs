@@ -211,7 +211,7 @@ export function defaultTxVerifier(
       ) {
         const noopAction = augmentedActions[0];
         if (
-          extraAction.data.to === "gasfee.wax" &&
+          extraAction.data.to === "txfee.wax" &&
           extraAction.data.memo.startsWith("WAX fee for ") &&
           JSON.stringify(noopAction) ===
             JSON.stringify({
