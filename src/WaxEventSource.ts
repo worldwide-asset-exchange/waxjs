@@ -1,3 +1,9 @@
+function safeWindow(url: string, type: string, dimensions: string): Promise<Window> {
+  return new Promise(r => setTimeout(() => {
+    r(window.open(url, type, dimensions));
+  }));
+}
+
 export class WaxEventSource {
   constructor(private waxSigningURL: string) {
     this.openEventSource = this.openEventSource.bind(this);
@@ -5,7 +11,7 @@ export class WaxEventSource {
   }
 
   public async openPopup(url: string): Promise<Window> {
-    const win = await window.open(url, "WaxPopup", "height=800,width=600");
+    const win = await safeWindow(url, "WaxPopup", "height=800,width=600");
 
     if (win) {
       return win;
