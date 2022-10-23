@@ -1,5 +1,6 @@
 import { Transaction } from "eosjs/dist/eosjs-api-interfaces";
 import { Action } from "eosjs/dist/eosjs-serialize";
+import { start } from "repl";
 import {
   ILoginResponse,
   ISigningResponse,
@@ -7,6 +8,9 @@ import {
 } from "./interfaces";
 import { WaxEventSource } from "./WaxEventSource";
 
+function getCurrentTime() {
+  return Math.floor(new Date().getTime());
+}
 export class WaxSigningApi {
   private waxEventSource: WaxEventSource;
 
@@ -18,9 +22,11 @@ export class WaxSigningApi {
 
   constructor(
     readonly waxSigningURL: string,
-    readonly waxAutoSigningURL: string
+    readonly waxAutoSigningURL: string,
+    readonly metricURL?: string
   ) {
     this.waxEventSource = new WaxEventSource(waxSigningURL);
+    this.metricURL = metricURL;
   }
 
   public async login(): Promise<ILoginResponse> {
@@ -55,7 +61,27 @@ export class WaxSigningApi {
       );
     }
   }
-
+  public async metricLog(
+    name: string,
+    value: number = 0,
+    tags: any[] = []
+  ): Promise<void> {
+    try {
+      if (this.metricURL !== "") {
+        await fetch(this.metricURL, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ name, value, tags })
+        });
+      }
+    } catch (e) {
+      console.debug(e);
+      // do nothing
+    }
+  }
   public async signing(
     transaction: Transaction,
     serializedTransaction: Uint8Array,
@@ -64,11 +90,18 @@ export class WaxSigningApi {
   ): Promise<ISigningResponse> {
     if (this.canAutoSign(transaction)) {
       try {
-        return await this.signViaEndpoint(
+        const startTime = getCurrentTime();
+        const res = await this.signViaEndpoint(
           serializedTransaction,
           noModify,
           feeFallback
         );
+        await this.metricLog(
+          "waxjs.metric.auto_signing",
+          getCurrentTime() - startTime,
+          []
+        );
+        return res;
       } catch {
         // handle by continuing
       }
@@ -164,9 +197,11 @@ export class WaxSigningApi {
     noModify = false,
     feeFallback = true
   ): Promise<ISigningResponse> {
+    const startTime = getCurrentTime();
     const confirmationWindow: Window = await this.waxEventSource.openEventSource(
       `${this.waxSigningURL}/cloud-wallet/signing/`,
       {
+        startTime,
         feeFallback,
         freeBandwidth: !noModify,
         transaction: serializedTransaction,
@@ -208,7 +243,8 @@ export class WaxSigningApi {
         verified,
         signatures,
         whitelistedContracts,
-        serializedTransaction
+        serializedTransaction,
+        startTime
       } = event.data;
 
       if (!verified || !signatures) {
@@ -216,7 +252,13 @@ export class WaxSigningApi {
       }
 
       this.whitelistedContracts = whitelistedContracts || [];
-
+      if (startTime && startTime > 0) {
+        this.metricLog(
+          "waxjs.metric.manual_sign_transaction_time",
+          getCurrentTime() - startTime,
+          []
+        );
+      }
       return { serializedTransaction, signatures };
     }
 
