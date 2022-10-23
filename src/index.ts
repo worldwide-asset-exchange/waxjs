@@ -20,6 +20,7 @@ export class WaxJS {
   private readonly eosApiArgs: any;
   private readonly freeBandwidth: boolean;
   private readonly feeFallback: boolean;
+  private readonly metricURL: string;
   private readonly verifyTx: (
     user: ILoginResponse,
     originalTx: Transaction,
@@ -45,7 +46,8 @@ export class WaxJS {
     eosApiArgs = {},
     freeBandwidth = true,
     feeFallback = true,
-    verifyTx = defaultTxVerifier
+    verifyTx = defaultTxVerifier,
+    metricURL = ""
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -62,8 +64,13 @@ export class WaxJS {
       originalTx: Transaction,
       augmentedTx: Transaction
     ) => void;
+    metricURL?: string;
   }) {
-    this.signingApi = new WaxSigningApi(waxSigningURL, waxAutoSigningURL);
+    this.signingApi = new WaxSigningApi(
+      waxSigningURL,
+      waxAutoSigningURL,
+      metricURL
+    );
     this.rpc = new JsonRpc(rpcEndpoint);
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
@@ -71,6 +78,7 @@ export class WaxJS {
     this.eosApiArgs = eosApiArgs;
     this.freeBandwidth = freeBandwidth;
     this.feeFallback = feeFallback;
+    this.metricURL = metricURL;
     this.verifyTx = verifyTx;
 
     if (userAccount && Array.isArray(pubKeys)) {
