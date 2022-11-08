@@ -12,4 +12,5 @@ export interface ISigningResponse {
 export interface ILoginResponse {
   account: string;
   keys: string[];
+  isTemp?: boolean;
 }
