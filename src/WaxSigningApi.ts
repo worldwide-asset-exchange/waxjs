@@ -219,7 +219,13 @@ export class WaxSigningApi {
   }
 
   private async receiveLogin(event: { data: any }): Promise<boolean> {
-    const { verified, userAccount, pubKeys, whitelistedContracts } = event.data;
+    const {
+      verified,
+      userAccount,
+      pubKeys,
+      whitelistedContracts,
+      isTemp
+    } = event.data;
 
     if (!verified) {
       throw new Error("User declined to share their user account");
@@ -230,7 +236,7 @@ export class WaxSigningApi {
     }
 
     this.whitelistedContracts = whitelistedContracts || [];
-    this.user = { account: userAccount, keys: pubKeys };
+    this.user = { account: userAccount, keys: pubKeys, isTemp };
 
     return true;
   }
