@@ -21,6 +21,8 @@ export class WaxJS {
   private readonly freeBandwidth: boolean;
   private readonly feeFallback: boolean;
   private readonly metricURL: string;
+  private readonly returnTempAccounts: boolean;
+
   private readonly verifyTx: (
     user: ILoginResponse,
     originalTx: Transaction,
@@ -47,7 +49,8 @@ export class WaxJS {
     freeBandwidth = true,
     feeFallback = true,
     verifyTx = defaultTxVerifier,
-    metricURL = ""
+    metricURL = "",
+    returnTempAccounts = false
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -65,11 +68,13 @@ export class WaxJS {
       augmentedTx: Transaction
     ) => void;
     metricURL?: string;
+    returnTempAccounts?: boolean;
   }) {
     this.signingApi = new WaxSigningApi(
       waxSigningURL,
       waxAutoSigningURL,
-      metricURL
+      metricURL,
+      returnTempAccounts
     );
     this.rpc = new JsonRpc(rpcEndpoint);
     this.waxSigningURL = waxSigningURL;
@@ -80,6 +85,7 @@ export class WaxJS {
     this.feeFallback = feeFallback;
     this.metricURL = metricURL;
     this.verifyTx = verifyTx;
+    this.returnTempAccounts = returnTempAccounts;
 
     if (userAccount && Array.isArray(pubKeys)) {
       // login from constructor
