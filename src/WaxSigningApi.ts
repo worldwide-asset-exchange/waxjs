@@ -23,10 +23,12 @@ export class WaxSigningApi {
   constructor(
     readonly waxSigningURL: string,
     readonly waxAutoSigningURL: string,
-    readonly metricURL?: string
+    readonly metricURL?: string,
+    readonly returnTempAccount?: boolean
   ) {
     this.waxEventSource = new WaxEventSource(waxSigningURL);
     this.metricURL = metricURL;
+    this.returnTempAccount = returnTempAccount;
   }
 
   public async login(): Promise<ILoginResponse> {
@@ -116,8 +118,15 @@ export class WaxSigningApi {
   }
 
   private async loginViaWindow(): Promise<boolean> {
+    const url = new URL(`${this.waxSigningURL}/cloud-wallet/login/`);
+    if (this.returnTempAccount) {
+      url.search = "returnTemp=true";
+    } else {
+      url.search = "";
+    }
+
     const confirmationWindow = await this.waxEventSource.openEventSource(
-      `${this.waxSigningURL}/cloud-wallet/login/`
+      url.toString()
     );
 
     return this.waxEventSource.onceEvent(
@@ -129,7 +138,13 @@ export class WaxSigningApi {
   }
 
   private async loginViaEndpoint(): Promise<boolean> {
-    const response = await fetch(`${this.waxAutoSigningURL}login`, {
+    const url = new URL(`${this.waxAutoSigningURL}login`);
+    if (this.returnTempAccount) {
+      url.search = "returnTemp=true";
+    } else {
+      url.search = "";
+    }
+    const response = await fetch(url.toString(), {
       credentials: "include",
       method: "get"
     });
