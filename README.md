@@ -31,7 +31,7 @@ yarn add @waxio/waxjs
 React style apps using npm or yarn can import the library via:
 
 ```js
-import * as waxjs from "@waxio/waxjs/dist";
+import * as waxjs from "@waxio/waxjs";
 ```
 
 ### 1. Instantiate

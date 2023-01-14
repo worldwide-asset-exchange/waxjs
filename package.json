@@ -2,6 +2,8 @@
   "name": "@waxio/waxjs",
   "version": "1.2.0-beta.2",
   "description": "Javascript API for integration with the WAX Cloud Wallet.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "build-web": "webpack --config webpack.prod.js",
