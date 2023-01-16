@@ -1,0 +1,38 @@
+name: Bug Report
+description: Create a bug report for WaxJS
+labels: 'template: bug'
+body:
+  - type: markdown
+    attributes:
+      value: We would like to thank you for taking time to submit a bug report for WaxJS package. Make sure that the bug report is clear and can be reproduced by our team.
+
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A clear description of what the bug does.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: A clear description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: How to reproduce
+      description: You can place snippets, link to a repository or sandbox (stackblitz, codesandbox, etc)
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Browser (if relevant)
+      description: 'Specify browser version if possible'
+
+  - type: input
+    attributes:
+      label: Package version
+      description: 'ex: 1.0.4'
