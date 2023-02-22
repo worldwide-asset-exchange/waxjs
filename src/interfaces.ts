@@ -13,4 +13,5 @@ export interface ILoginResponse {
   account: string;
   keys: string[];
   isTemp?: boolean;
+  createData?: any;
 }

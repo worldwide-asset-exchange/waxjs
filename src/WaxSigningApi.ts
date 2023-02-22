@@ -239,7 +239,8 @@ export class WaxSigningApi {
       userAccount,
       pubKeys,
       whitelistedContracts,
-      isTemp
+      isTemp,
+      createData
     } = event.data;
 
     if (!verified) {
@@ -249,9 +250,8 @@ export class WaxSigningApi {
     if (!userAccount || !pubKeys) {
       throw new Error("User does not have a blockchain account");
     }
-
     this.whitelistedContracts = whitelistedContracts || [];
-    this.user = { account: userAccount, keys: pubKeys, isTemp };
+    this.user = { account: userAccount, keys: pubKeys, isTemp, createData };
 
     return true;
   }
