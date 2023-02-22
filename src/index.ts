@@ -36,6 +36,12 @@ export class WaxJS {
   public get pubKeys() {
     return this.user && this.user.keys;
   }
+  public get isTemp(): boolean {
+    return this.user && this.user.isTemp;
+  }
+  public get createInfo(): any {
+    return this.user && this.user.createData;
+  }
 
   constructor({
     rpcEndpoint,
@@ -43,8 +49,8 @@ export class WaxJS {
     userAccount,
     pubKeys,
     apiSigner,
-    waxSigningURL = "https://all-access.wax.io",
-    waxAutoSigningURL = "https://api-idm.wax.io/v1/accounts/auto-accept/",
+    waxSigningURL = "https://www.mycloudwallet.com",
+    waxAutoSigningURL = "https://idm-api.mycloudwallet.com/v1/accounts/auto-accept/",
     eosApiArgs = {},
     freeBandwidth = true,
     feeFallback = true,
@@ -62,6 +68,7 @@ export class WaxJS {
     eosApiArgs?: any;
     freeBandwidth?: boolean;
     feeFallback?: boolean;
+    createData?: any;
     verifyTx?: (
       user: ILoginResponse,
       originalTx: Transaction,
@@ -86,7 +93,6 @@ export class WaxJS {
     this.metricURL = metricURL;
     this.verifyTx = verifyTx;
     this.returnTempAccounts = returnTempAccounts;
-
     if (userAccount && Array.isArray(pubKeys)) {
       // login from constructor
       this.receiveLogin({ account: userAccount, keys: pubKeys });

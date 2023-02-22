@@ -116,10 +116,43 @@ const result = await wax.api.transact({
 * **metricsUrl**: used by WAXIO to gather metrics about failed transaction, times it takes to load a transaction. Default *Optional*
 * **returnTempAccounts**: using this flag will return temporary accounts or accounts that have signed up for a cloud wallet but not paid the introduction fee to get a blockchain account created. When this is set to true, using the doLogin function will return blockchain account name that may not exist in the blockchain but it will also return an extra boolean flag called isTemp. If this flag is true it is a temporary account, it does not exist in the blockchain yet. If this constructor option is false then only accounts which have been activated and have a blockchain account will be returned.  
 
-### Temporary Accounts
+## Temporary Accounts
 
 Temporary accounts are users that have signed up for a wallet account, but have not paid the entry fee to get the blockchain account created.
-We allow dapps to return accounts using the `returnTempAccounts` contructor argument. This is so that the dapps can create an account on behalf of the user or have a custom signup flow if they want. 
+We allow waxjs to return accounts using the `returnTempAccounts` contructor argument, by then dapps can create an account on behalf of the user or have a custom signup flow if they want.
+
+For example:
+
+`returnTempAccounts` = true, User with temporary account can login and try out the dApp without using any blockchain function
+
+`returnTempAccounts` = false, this means the waxjs library will only return accounts for users who have a block chain account. People who have already paid the creation fee
+
+### Identify user with temporary account (no blockchain account)
+
+After the wax.login() call you can check if an account is temporary using wax.isTemp(), remember this will only ever can be true if allowTemporaryAccounts is set to true, or else waxjs will never return temporary accounts.
+
+### Create blockchain account on behalf of the user
+
+To create blockchain account on behalf of the user, dApp owners can send ```5 WAXP```( get the latest value from [here](https://waxblock.io/account/newuser.wax?code=newuser.wax&scope=newuser.wax&table=settings&lower_bound=createval&upper_bound=createval&limit=10#contract-tables) ) to ```newuser.wax``` with the MEMO = ```userAccount```.
+
+There is a refund system in place if you pay more than the account creation fee, the extra amount will be refunded to the newly created account. eg: you send ```8 WAXP``` to ```newuser.wax``` for a new account named: ```new.wam``` after the new account ```new.wam``` is created it will get ```3 WAXP``` refunded. There is a maximum amount that will be refunded, it can be found [here](https://waxblock.io/account/newuser.wax?code=newuser.wax&scope=newuser.wax&table=settings&lower_bound=maxrefund&upper_bound=maxrefund&limit=10#contract-tables)
+
+If you want to get the latest account creation fee from the blockchain you can get it from waxjs. After the user has logged in you can call ```waxjs.createInfo``` this will return an object like this : 
+```
+{
+    "contract": "eosio.token",
+    "message": "Create the user's blockchain account ds.k.wam by sending 5 WAX to newuser.wax with the memo as the one mentioned below.",
+    "amount": "5.00000000 WAX",
+    "memo": "dsDOTkDOTwam"
+}
+```
+**This is only be returned if the account is temporary so check that the account is temporary using ```waxjs.isTemp``` before you call ```waxjs.createInfo```**
+
+For example:
+
+User login with temporary account, and their ```userAccount``` = ```hfhf.wam```
+Dapps can send ```5 WAXP``` (current account creation fee) to ```newuser.wax``` , with ```MEMO``` = ```hfhf.wam```
+Then the blockchain account of the user would be created, and they can start using all the blockchain features. 
 
 ## Free Bandwidth
 
