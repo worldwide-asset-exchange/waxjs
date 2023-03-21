@@ -160,6 +160,80 @@ So long as waxjs is initialized with ```freeBandwidth = true``` (this is the def
 
 Dapps that require more bandwidth will be able to register their own bandwidth via the [bandwidth registration contract](https://wax.bloks.io/account/boost.wax?loadContract=true&tab=Actions&account=boost.wax&scope=boost.wax&limit=100&action=reg). More info on registering for extra bandwidth management can be found [here](https://github.com/worldwide-asset-exchange/boost.wax).
 
+## Logout 
+
+You can now log a user out of the waxjs library, this is usefull if you want to logout one user and let them login with another account.
+
+To do this just call `wax.logout()` that will be enough.
+
+## Proof System
+
+Sometimes it is important to verify that the current logged in user is legitimate. 
+
+We do this by checking the that the current session belongs to the user account that you have in your dapp. 
+
+There are two ways to check this using `waxProof(nonce,verify = true)` Function and `userAccountProof(nonce,description,verify = true)` 
+
+Both of these functions will need a nonce, which is a string that you generate on your side and send it to be signed.
+
+An extra parameter called description is needed for `userAccountProof` but not used right now.
+
+the `verify` boolean will tell the functions if you want waxjs to do the verification. 
+
+If `verify` is `true` then the waxjs library will do the verification and the functions will return a boolean either true of false to indicate if the verfication process succeeded.
+
+If `verify` is `false` the library will then return the following verification object
+
+```
+{
+    "type": "VERIFY",
+    "accountName": "myacc.wam",
+    "referer": "https://mywebsite.com/",
+    "signature": "SIG_K1_Jx8kAWjeiyaQPZyDExo5xrMPWLeM93BzJ25w2m2tvMdTnYb8AQ9TPyaPKh9Lqygg4Q6BNfTTsk6chdrnuPyLqG85gjXBpX",
+    "message": "cloudwallet-verification-https://mywebsite.com/-nonce-myacc.wam"
+}
+```
+you can then use this structure if you want to do this verification in the backend. 
+
+`signature` is the signature that was signed using the private key. `accountName` is the account name we have on our record. the `message` is the message that was actually signed.
+
+**The message is different for both the functions. the `userAccountVerify` will sign whatever nonce you send so the message will contain only the nonce, where as `waxProof` will contain a combined message as shown above.**
+
+### Usage
+
+```
+wax.waxProof("hello world",true)
+```
+
+```
+wax.userAccountProof("hello world","",true);
+```
+
+### Manual verification of signature. 
+```
+import * as ecc from 'eosjs-ecc';
+let verifyObj = await wax.waxProof("hello world",false);
+let proofWaxActivePublicKey="EOS5fiahVT7rWcu2V18T93WoCcJ27HF4GR7xr9sX4SQ5rMbGvEH1Y"; //active key for proof.wax
+const isValidSignature = ecc.verify(verifyObj.signature, verifyObj.message, proofWaxActivePublicKey);
+if (isValidSignature) {
+  alert('User authenticated');
+} else {
+  alert('User unauthenticated');
+}
+
+```
+
+```
+import * as ecc from 'eosjs-ecc';
+let verifyObj = wax.userAccountProof("hello world","",false);
+let userWaxActivePublicKey="EOS5aaaaaaaaaaaaa";
+const isValidSignature = ecc.verify(verifyObj.signature, verifyObj.message, userWaxActivePublicKey);
+if (isValidSignature) {
+  alert('User authenticated');
+} else {
+  alert('User unauthenticated');
+}
+```
 
 ## Fee fallback
 

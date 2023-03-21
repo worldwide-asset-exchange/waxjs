@@ -74,7 +74,6 @@ export class WaxEventSource {
           if (typeof event.data !== "object") {
             return;
           }
-
           if (type && (!event.data.type || event.data.type !== type)) {
             return;
           }
