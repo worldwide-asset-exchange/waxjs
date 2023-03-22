@@ -1,9 +1,9 @@
 import { Api, JsonRpc } from "eosjs";
-import * as ecc from "eosjs-ecc";
 import {
   SignatureProvider,
   Transaction
 } from "eosjs/dist/eosjs-api-interfaces";
+import { ecc } from "eosjs/dist/eosjs-ecc-migration";
 import { ILoginResponse } from "./interfaces";
 import { WaxSigningApi } from "./WaxSigningApi";
 const PROOF_WAX = 1;
@@ -143,9 +143,9 @@ export class WaxJS {
   }
 
   public async userAccountProof(
-    nonce,
-    description,
-    verify = true
+    nonce:string,
+    description:string,
+    verify:boolean = true
   ): Promise<any> {
     if (!this.user) {
       throw new Error("User is not logged in");
@@ -166,7 +166,7 @@ export class WaxJS {
     }
     return false;
   }
-  public async waxProof(nonce, verify = true): Promise<any> {
+  public async waxProof(nonce:string, verify:boolean = true): Promise<any> {
     if (!this.user) {
       throw new Error("User is not logged in");
     }
