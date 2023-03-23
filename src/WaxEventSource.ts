@@ -6,7 +6,6 @@ export class WaxEventSource {
 
   public async openPopup(url: string): Promise<Window> {
     const win = await window.open(url, "WaxPopup", "height=800,width=600");
-
     if (win) {
       return win;
     }
@@ -60,6 +59,7 @@ export class WaxEventSource {
     type?: string
   ): Promise<T> {
     return new Promise((resolve, reject) => {
+      let resolved = false;
       window.addEventListener(
         "message",
         async function onEvent(event) {
@@ -79,8 +79,10 @@ export class WaxEventSource {
           }
 
           try {
+            resolved =true;
             resolve(await action(event));
           } catch (e) {
+            resolved = true;
             reject(e);
           }
 
@@ -88,6 +90,12 @@ export class WaxEventSource {
         },
         false
       );
+      const interval = setInterval(()=> {
+        if(source.closed && !resolved){
+          clearInterval(interval);
+          reject("user closed the window");
+        }
+      },1000)
     });
   }
 
