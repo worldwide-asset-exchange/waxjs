@@ -3,9 +3,11 @@ import {
   SignatureProvider,
   Transaction
 } from "eosjs/dist/eosjs-api-interfaces";
+import { ecc } from "eosjs/dist/eosjs-ecc-migration";
 import { ILoginResponse } from "./interfaces";
 import { WaxSigningApi } from "./WaxSigningApi";
-
+const PROOF_WAX = 1;
+const PROOF_USER = 2;
 export class WaxJS {
   public readonly rpc: JsonRpc;
 
@@ -23,6 +25,8 @@ export class WaxJS {
   private readonly metricURL: string;
   private readonly returnTempAccounts: boolean;
 
+  private rpcUrl: string;
+  private proofWaxKey: string;
   private readonly verifyTx: (
     user: ILoginResponse,
     originalTx: Transaction,
@@ -84,6 +88,7 @@ export class WaxJS {
       returnTempAccounts
     );
     this.rpc = new JsonRpc(rpcEndpoint);
+    this.rpcUrl = rpcEndpoint;
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
     this.apiSigner = apiSigner;
@@ -91,6 +96,7 @@ export class WaxJS {
     this.freeBandwidth = freeBandwidth;
     this.feeFallback = feeFallback;
     this.metricURL = metricURL;
+    this.proofWaxKey = "";
     this.verifyTx = verifyTx;
     this.returnTempAccounts = returnTempAccounts;
     if (userAccount && Array.isArray(pubKeys)) {
@@ -106,6 +112,7 @@ export class WaxJS {
         });
       }
     }
+    this.getRequiredKeys();
   }
 
   public async login(): Promise<string> {
@@ -127,7 +134,68 @@ export class WaxJS {
 
     return false;
   }
+  public async logout() {
+    this.user = null;
+    this.api = null;
+    if (this.signingApi) {
+      this.signingApi.logout();
+    }
+  }
 
+  public async userAccountProof(
+    nonce:string,
+    description:string,
+    verify:boolean = true
+  ): Promise<any> {
+    if (!this.user) {
+      throw new Error("User is not logged in");
+    }
+    const data = await this.signingApi.proofWindow(
+      nonce,
+      PROOF_USER,
+      description
+    );
+    const message = nonce;
+    if (!verify) {
+      return { ...data, message };
+    }
+    for (const key of this.pubKeys) {
+      if (await ecc.verify(data.signature, message, key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  public async waxProof(nonce:string, verify:boolean = true): Promise<any> {
+    if (!this.user) {
+      throw new Error("User is not logged in");
+    }
+    if (this.proofWaxKey === "") {
+      throw new Error("not fetched keys for proof.wax");
+    }
+    const data = await this.signingApi.proofWindow(nonce, PROOF_WAX, null);
+    const message = `cloudwallet-verification-${data.referer}-${nonce}-${data.accountName}`;
+    if (!verify) {
+      return { ...data, message };
+    }
+    return await ecc.verify(data.signature, message, this.proofWaxKey);
+  }
+  private async getRequiredKeys(): Promise<any> {
+    const response: any = await fetch(`${this.rpcUrl}/v1/chain/get_account`, {
+      body: JSON.stringify({
+        account_name: "proof.wax"
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    }).then(e => e.json());
+    if (response.permissions) {
+      for (const perm of response.permissions) {
+        if (perm.perm_name === "active") {
+          this.proofWaxKey = perm.required_auth.keys[0].key;
+        }
+      }
+    }
+  }
   private receiveLogin(data: ILoginResponse): void {
     this.user = data;
 

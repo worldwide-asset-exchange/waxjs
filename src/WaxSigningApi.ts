@@ -1,12 +1,13 @@
 import { Transaction } from "eosjs/dist/eosjs-api-interfaces";
 import { Action } from "eosjs/dist/eosjs-serialize";
-import { start } from "repl";
+import { Protocol } from "puppeteer";
 import {
   ILoginResponse,
   ISigningResponse,
   IWhitelistedContract
 } from "./interfaces";
 import { WaxEventSource } from "./WaxEventSource";
+import integer = Protocol.integer;
 
 function getCurrentTime() {
   return Math.floor(new Date().getTime());
@@ -30,7 +31,9 @@ export class WaxSigningApi {
     this.metricURL = metricURL;
     this.returnTempAccount = returnTempAccount;
   }
-
+  public logout(): void {
+    this.user = null;
+  }
   public async login(): Promise<ILoginResponse> {
     if (!this.user) {
       await this.loginViaWindow();
@@ -116,7 +119,28 @@ export class WaxSigningApi {
       feeFallback
     );
   }
-
+  public async proofWindow(
+    nonce: string,
+    type: integer,
+    description: string | null
+  ): Promise<any> {
+    const verifyUrl = `${this.waxSigningURL}/cloud-wallet/verify`;
+    const referWindow: Window = await this.waxEventSource.openEventSource(
+      verifyUrl,
+      {
+        type: "VERIFY",
+        nonce,
+        proof_type: type,
+        description
+      }
+    );
+    return this.waxEventSource.onceEvent(
+      referWindow,
+      this.waxSigningURL,
+      this.receiveVerfication.bind(this),
+      undefined
+    );
+  }
   private async loginViaWindow(): Promise<boolean> {
     const url = new URL(`${this.waxSigningURL}/cloud-wallet/login/`);
     if (this.returnTempAccount) {
@@ -204,6 +228,13 @@ export class WaxSigningApi {
     }
 
     return this.receiveSignatures({ data });
+  }
+
+  private receiveVerfication(event: { data: any }): Promise<any> {
+    if (event.data.type === "DENY") {
+      throw new Error("User Denied Verification");
+    }
+    return { ...event.data };
   }
 
   private async signViaWindow(
