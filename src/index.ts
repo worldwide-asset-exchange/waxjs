@@ -112,7 +112,6 @@ export class WaxJS {
         });
       }
     }
-    this.getRequiredKeys();
   }
 
   public async login(): Promise<string> {
@@ -171,7 +170,7 @@ export class WaxJS {
       throw new Error("User is not logged in");
     }
     if (this.proofWaxKey === "") {
-      throw new Error("not fetched keys for proof.wax");
+      await this.getRequiredKeys();
     }
     const data = await this.signingApi.proofWindow(nonce, PROOF_WAX, null);
     const message = `cloudwallet-verification-${data.referer}-${nonce}-${data.accountName}`;
