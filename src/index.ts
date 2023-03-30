@@ -184,7 +184,6 @@ export class WaxJS {
       body: JSON.stringify({
         account_name: "proof.wax"
       }),
-      headers: { "Content-Type": "application/json" },
       method: "POST"
     }).then(e => e.json());
     if (response.permissions) {
