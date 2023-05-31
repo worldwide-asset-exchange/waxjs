@@ -79,7 +79,7 @@ export class WaxEventSource {
           }
 
           try {
-            resolved =true;
+            resolved = true;
             resolve(await action(event));
           } catch (e) {
             resolved = true;
@@ -90,12 +90,12 @@ export class WaxEventSource {
         },
         false
       );
-      const interval = setInterval(()=> {
-        if(source.closed && !resolved){
+      const interval = setInterval(() => {
+        if (source.closed && !resolved) {
           clearInterval(interval);
           reject("user closed the window");
         }
-      },1000)
+      }, 1000);
     });
   }
 

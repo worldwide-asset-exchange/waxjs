@@ -14,4 +14,6 @@ export interface ILoginResponse {
   keys: string[];
   isTemp?: boolean;
   createData?: any;
+  avatarUrl?: string;
+  trustScore?: number;
 }
