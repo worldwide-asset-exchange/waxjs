@@ -46,6 +46,15 @@ export class WaxJS {
   public get createInfo(): any {
     return this.user && this.user.createData;
   }
+  public get avatar(): string {
+    return this.user?.avatarUrl;
+  }
+  public get trustScore(): number {
+    return this.user?.trustScore;
+  }
+  public get trustScoreProvider(): string {
+    return 'https://chainchamps.com';
+  }
 
   constructor({
     rpcEndpoint,
@@ -142,9 +151,9 @@ export class WaxJS {
   }
 
   public async userAccountProof(
-    nonce:string,
-    description:string,
-    verify:boolean = true
+    nonce: string,
+    description: string,
+    verify: boolean = true
   ): Promise<any> {
     if (!this.user) {
       throw new Error("User is not logged in");
@@ -165,7 +174,7 @@ export class WaxJS {
     }
     return false;
   }
-  public async waxProof(nonce:string, verify:boolean = true): Promise<any> {
+  public async waxProof(nonce: string, verify: boolean = true): Promise<any> {
     if (!this.user) {
       throw new Error("User is not logged in");
     }
