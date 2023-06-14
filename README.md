@@ -250,7 +250,7 @@ After logging in, you can get avatar of the current user by method
 ```js
 wax.avatar();
 ```
-If user logged in with social account, they can have avatar as URL. If user sets the avatar using NFT, function will return IPFS hash. You can get full avatar URL from IPFS hash with a IPFS gateway, for example
+If user sets the avatar using NFT, function will return IPFS hash, otherwise it will be empty. You can get full avatar URL from IPFS hash with a IPFS gateway, for example
 ```
 https://mediacache.wax.io/<IPFS_HASH>
 https://ipfs.io/ipfs/<IPFS_HASH>
