@@ -264,7 +264,7 @@ Trust score will be from 0 to 1. In case that they don't have the score, functio
 
 ### Trust score provider can be found in
 ```
-wax.trustScoreProvider();
+wax.trustScoreProvider;
 ```
 
 ## Development
