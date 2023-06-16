@@ -248,7 +248,7 @@ By default CPU_FEE_RATIO=NET_FEE_RATIO=0.001, FEE_CONSTANT=0.01;
 ## Avatar
 After logging in, you can get avatar of the current user by method
 ```js
-wax.avatar();
+wax.avatar;
 ```
 If user sets the avatar using NFT, function will return IPFS hash. You can get full avatar URL from IPFS hash with a IPFS gateway, for example
 ```
@@ -258,7 +258,7 @@ https://ipfs.io/ipfs/<IPFS_HASH>
 ## Trust Score
 As same as avatar above, you can get user's trust score using function
 ```js
-wax.trustScore();
+wax.trustScore;
 ```
 Trust score will be from 0 to 1. In case that they don't have the score, function will return empty string `""`. The trust score are powered by Chainchamp. [Read more here](https://chainchamps.com/blog/introducing-trust).
 
