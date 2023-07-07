@@ -256,13 +256,15 @@ https://ipfs.io/ipfs/<IPFS_HASH>
 ```
 
 ## Trust Score
-As same as avatar above, you can get user's trust score using function
+Similar to Avatar above, you can get a user's trust score using the function
 ```js
 wax.trustScore;
 ```
-Trust score will be from 0 to 1. In case that they don't have the score, function will return empty string `""`. The trust score are powered by Chainchamp. [Read more here](https://chainchamps.com/blog/introducing-trust).
+The Trust score will be from 0 to 1. If there is no score yet, the function will return the empty string `""`. 
 
-### Trust score provider can be found in
+TRUST scores are powered by [**Chain Champs**](https://www.chainchamps.com/blog/introducing-trust) and you can [learn more about TRUST here](https://trust.chainchamps.com/).
+
+### The Trust score provider can be found in
 ```
 wax.trustScoreProvider;
 ```
