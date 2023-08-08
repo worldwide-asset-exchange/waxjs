@@ -6,6 +6,7 @@ import {
   ISigningResponse,
   IWhitelistedContract
 } from "./interfaces";
+import { version } from "./version";
 import { WaxEventSource } from "./WaxEventSource";
 import integer = Protocol.integer;
 
@@ -142,13 +143,13 @@ export class WaxSigningApi {
     );
   }
   private async loginViaWindow(): Promise<boolean> {
-    const url = new URL(`${this.waxSigningURL}/cloud-wallet/login/`);
+    const url = new URL(`${this.waxSigningURL}/cloud-wallet/login`);
     if (this.returnTempAccount) {
-      url.search = "returnTemp=true";
-    } else {
-      url.search = "";
+      url.searchParams.append('returnTemp', 'true');
     }
-
+    if (version) {
+      url.searchParams.append('v', Buffer.from(version).toString('base64'));
+    }
     const confirmationWindow = await this.waxEventSource.openEventSource(
       url.toString()
     );

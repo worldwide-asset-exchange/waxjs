@@ -5,7 +5,9 @@ import {
 } from "eosjs/dist/eosjs-api-interfaces";
 import { ecc } from "eosjs/dist/eosjs-ecc-migration";
 import { ILoginResponse } from "./interfaces";
+import { version } from "./version";
 import { WaxSigningApi } from "./WaxSigningApi";
+
 const PROOF_WAX = 1;
 const PROOF_USER = 2;
 export class WaxJS {
@@ -53,7 +55,10 @@ export class WaxJS {
     return this.user?.trustScore;
   }
   public get trustScoreProvider(): string {
-    return 'https://chainchamps.com';
+    return "https://chainchamps.com";
+  }
+  public get version(): string {
+    return version;
   }
 
   constructor({

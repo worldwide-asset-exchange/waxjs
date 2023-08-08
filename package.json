@@ -1,6 +1,6 @@
 {
   "name": "@waxio/waxjs",
-  "version": "1.5.0",
+  "version": "1.5.1-beta",
   "description": "Javascript API for integration with the WAX Cloud Wallet.",
   "scripts": {
     "build": "tsc",
@@ -12,7 +12,7 @@
     "docs:serve": "serve -s docs",
     "serve": "serve -s dist-web",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run lint",
+    "prepublishOnly": "npm run lint && npx genversion --es6 src/version.ts",
     "preversion": "npm run lint",
     "version": "npm run prettier && git add -A src",
     "postversion": "git push && git push --tags"
@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "eosjs": "^22.1.0",
+    "genversion": "^3.1.1",
     "ts-node-dev": "^1.1.8"
   },
   "files": [
