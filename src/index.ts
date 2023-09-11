@@ -1,9 +1,10 @@
 import { Api, JsonRpc } from "eosjs";
 import {
   SignatureProvider,
-  Transaction
+  Transaction,
 } from "eosjs/dist/eosjs-api-interfaces";
 import { ecc } from "eosjs/dist/eosjs-ecc-migration";
+import { getProofWaxRequiredKeys } from "./helpers";
 import { ILoginResponse } from "./interfaces";
 import { version } from "./version";
 import { WaxSigningApi } from "./WaxSigningApi";
@@ -27,8 +28,6 @@ export class WaxJS {
   private readonly metricURL: string;
   private readonly returnTempAccounts: boolean;
 
-  private rpcUrl: string;
-  private proofWaxKey: string;
   private readonly verifyTx: (
     user: ILoginResponse,
     originalTx: Transaction,
@@ -60,6 +59,9 @@ export class WaxJS {
   public get version(): string {
     return version;
   }
+  public get proofVerified(): boolean {
+    return this.user?.isProofVerified;
+  }
 
   constructor({
     rpcEndpoint,
@@ -74,7 +76,7 @@ export class WaxJS {
     feeFallback = true,
     verifyTx = defaultTxVerifier,
     metricURL = "",
-    returnTempAccounts = false
+    returnTempAccounts = false,
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -95,14 +97,14 @@ export class WaxJS {
     metricURL?: string;
     returnTempAccounts?: boolean;
   }) {
+    this.rpc = new JsonRpc(rpcEndpoint);
     this.signingApi = new WaxSigningApi(
       waxSigningURL,
       waxAutoSigningURL,
+      this.rpc,
       metricURL,
       returnTempAccounts
     );
-    this.rpc = new JsonRpc(rpcEndpoint);
-    this.rpcUrl = rpcEndpoint;
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
     this.apiSigner = apiSigner;
@@ -110,7 +112,6 @@ export class WaxJS {
     this.freeBandwidth = freeBandwidth;
     this.feeFallback = feeFallback;
     this.metricURL = metricURL;
-    this.proofWaxKey = "";
     this.verifyTx = verifyTx;
     this.returnTempAccounts = returnTempAccounts;
     if (userAccount && Array.isArray(pubKeys)) {
@@ -119,7 +120,7 @@ export class WaxJS {
     } else {
       // try to auto-login via endpoint
       if (tryAutoLogin) {
-        this.signingApi.tryAutologin().then(async response => {
+        this.signingApi.tryAutologin().then(async (response) => {
           if (response) {
             this.receiveLogin(await this.signingApi.login());
           }
@@ -128,9 +129,9 @@ export class WaxJS {
     }
   }
 
-  public async login(): Promise<string> {
+  public async login(nonce?: string): Promise<string> {
     if (!this.user) {
-      this.receiveLogin(await this.signingApi.login());
+      this.receiveLogin(await this.signingApi.login(nonce));
     }
 
     return this.user.account;
@@ -173,7 +174,7 @@ export class WaxJS {
       return { ...data, message };
     }
     for (const key of this.pubKeys) {
-      if (await ecc.verify(data.signature, message, key)) {
+      if (ecc.verify(data.signature, message, key)) {
         return true;
       }
     }
@@ -183,31 +184,18 @@ export class WaxJS {
     if (!this.user) {
       throw new Error("User is not logged in");
     }
-    if (this.proofWaxKey === "") {
-      await this.getRequiredKeys();
-    }
     const data = await this.signingApi.proofWindow(nonce, PROOF_WAX, null);
     const message = `cloudwallet-verification-${data.referer}-${nonce}-${data.accountName}`;
     if (!verify) {
       return { ...data, message };
     }
-    return await ecc.verify(data.signature, message, this.proofWaxKey);
+    return ecc.verify(
+      data.signature,
+      message,
+      await getProofWaxRequiredKeys(this.rpc.endpoint)
+    );
   }
-  private async getRequiredKeys(): Promise<any> {
-    const response: any = await fetch(`${this.rpcUrl}/v1/chain/get_account`, {
-      body: JSON.stringify({
-        account_name: "proof.wax"
-      }),
-      method: "POST"
-    }).then(e => e.json());
-    if (response.permissions) {
-      for (const perm of response.permissions) {
-        if (perm.perm_name === "active") {
-          this.proofWaxKey = perm.required_auth.keys[0].key;
-        }
-      }
-    }
-  }
+
   private receiveLogin(data: ILoginResponse): void {
     this.user = data;
 
@@ -216,23 +204,21 @@ export class WaxJS {
         return [
           ...this.user.keys,
           ...((this.apiSigner && (await this.apiSigner.getAvailableKeys())) ||
-            [])
+            []),
         ];
       },
-      sign: async sigArgs => {
+      sign: async (sigArgs) => {
         const originalTx = await this.api.deserializeTransactionWithActions(
           sigArgs.serializedTransaction
         );
 
-        const {
-          serializedTransaction,
-          signatures
-        } = await this.signingApi.signing(
-          originalTx,
-          sigArgs.serializedTransaction,
-          !this.freeBandwidth,
-          this.feeFallback
-        );
+        const { serializedTransaction, signatures } =
+          await this.signingApi.signing(
+            originalTx,
+            sigArgs.serializedTransaction,
+            !this.freeBandwidth,
+            this.feeFallback
+          );
 
         const augmentedTx = await this.api.deserializeTransactionWithActions(
           serializedTransaction
@@ -248,16 +234,16 @@ export class WaxJS {
             ...signatures,
             ...((this.apiSigner &&
               (await this.apiSigner.sign(sigArgs)).signatures) ||
-              [])
-          ]
+              []),
+          ],
         };
-      }
+      },
     };
 
     this.api = new Api({
       ...this.eosApiArgs,
       rpc: this.rpc,
-      signatureProvider
+      signatureProvider,
     });
     const transact = this.api.transact.bind(this.api);
     // We monkeypatch the transact method to overcome timeouts
@@ -320,10 +306,10 @@ export function defaultTxVerifier(
               authorization: [
                 {
                   actor: "boost.wax",
-                  permission: "paybw"
-                }
+                  permission: "paybw",
+                },
               ],
-              data: {}
+              data: {},
             })
         ) {
           continue;
