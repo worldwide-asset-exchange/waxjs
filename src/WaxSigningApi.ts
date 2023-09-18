@@ -1,11 +1,17 @@
+import { JsonRpc } from "eosjs";
 import { Transaction } from "eosjs/dist/eosjs-api-interfaces";
+import { ecc } from "eosjs/dist/eosjs-ecc-migration";
 import { Action } from "eosjs/dist/eosjs-serialize";
+
 import { Protocol } from "puppeteer";
+
+import { getProofWaxRequiredKeys } from "./helpers";
 import {
   ILoginResponse,
   ISigningResponse,
-  IWhitelistedContract
+  IWhitelistedContract,
 } from "./interfaces";
+import { version } from "./version";
 import { WaxEventSource } from "./WaxEventSource";
 import integer = Protocol.integer;
 
@@ -21,21 +27,26 @@ export class WaxSigningApi {
 
   private whitelistedContracts?: IWhitelistedContract[];
 
+  private nonce: string = "";
+
   constructor(
     readonly waxSigningURL: string,
     readonly waxAutoSigningURL: string,
+    readonly rpc: JsonRpc,
     readonly metricURL?: string,
     readonly returnTempAccount?: boolean
   ) {
     this.waxEventSource = new WaxEventSource(waxSigningURL);
     this.metricURL = metricURL;
     this.returnTempAccount = returnTempAccount;
+    this.rpc = rpc;
   }
   public logout(): void {
     this.user = null;
   }
-  public async login(): Promise<ILoginResponse> {
+  public async login(nonce?: string): Promise<ILoginResponse> {
     if (!this.user) {
+      this.nonce = nonce;
       await this.loginViaWindow();
     }
 
@@ -77,9 +88,9 @@ export class WaxSigningApi {
           method: "POST",
           headers: {
             Accept: "application/json",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ name, value, tags })
+          body: JSON.stringify({ name, value, tags }),
         });
       }
     } catch (e) {
@@ -131,7 +142,7 @@ export class WaxSigningApi {
         type: "VERIFY",
         nonce,
         proof_type: type,
-        description
+        description,
       }
     );
     return this.waxEventSource.onceEvent(
@@ -142,13 +153,16 @@ export class WaxSigningApi {
     );
   }
   private async loginViaWindow(): Promise<boolean> {
-    const url = new URL(`${this.waxSigningURL}/cloud-wallet/login/`);
+    const url = new URL(`${this.waxSigningURL}/cloud-wallet/login`);
     if (this.returnTempAccount) {
-      url.search = "returnTemp=true";
-    } else {
-      url.search = "";
+      url.searchParams.append("returnTemp", "true");
     }
-
+    if (version) {
+      url.searchParams.append("v", Buffer.from(version).toString("base64"));
+    }
+    if (this.nonce) {
+      url.searchParams.append("n", Buffer.from(this.nonce).toString("base64"));
+    }
     const confirmationWindow = await this.waxEventSource.openEventSource(
       url.toString()
     );
@@ -170,7 +184,7 @@ export class WaxSigningApi {
     }
     const response = await fetch(url.toString(), {
       credentials: "include",
-      method: "get"
+      method: "get",
     });
 
     if (!response.ok) {
@@ -201,12 +215,12 @@ export class WaxSigningApi {
       body: JSON.stringify({
         freeBandwidth: !noModify,
         feeFallback,
-        transaction: Object.values(serializedTransaction)
+        transaction: Object.values(serializedTransaction),
       }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       method: "POST",
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -244,17 +258,18 @@ export class WaxSigningApi {
     feeFallback = true
   ): Promise<ISigningResponse> {
     const startTime = getCurrentTime();
-    const confirmationWindow: Window = await this.waxEventSource.openEventSource(
-      `${this.waxSigningURL}/cloud-wallet/signing/`,
-      {
-        startTime,
-        feeFallback,
-        freeBandwidth: !noModify,
-        transaction: serializedTransaction,
-        type: "TRANSACTION"
-      },
-      window
-    );
+    const confirmationWindow: Window =
+      await this.waxEventSource.openEventSource(
+        `${this.waxSigningURL}/cloud-wallet/signing/`,
+        {
+          startTime,
+          feeFallback,
+          freeBandwidth: !noModify,
+          transaction: serializedTransaction,
+          type: "TRANSACTION",
+        },
+        window
+      );
 
     return this.waxEventSource.onceEvent(
       confirmationWindow,
@@ -273,9 +288,10 @@ export class WaxSigningApi {
       isTemp,
       createData,
       avatar_url: avatarUrl,
-      trustScore
+      trustScore,
+      proof,
     } = event.data;
-
+    let isProofVerified = false;
     if (!verified) {
       throw new Error("User declined to share their user account");
     }
@@ -283,6 +299,16 @@ export class WaxSigningApi {
     if (!userAccount || !pubKeys) {
       throw new Error("User does not have a blockchain account");
     }
+    if (proof?.verified && this.nonce) {
+      // handle proof logic
+      const message = `cloudwallet-verification-${proof.data.referer}-${this.nonce}-${userAccount}`;
+      isProofVerified = ecc.verify(
+        proof.data.signature,
+        message,
+        await getProofWaxRequiredKeys(this.rpc.endpoint)
+      );
+    }
+
     this.whitelistedContracts = whitelistedContracts || [];
     this.user = {
       account: userAccount,
@@ -290,9 +316,9 @@ export class WaxSigningApi {
       isTemp,
       createData,
       avatarUrl,
-      trustScore
+      trustScore,
+      isProofVerified,
     };
-
     return true;
   }
 
@@ -305,7 +331,7 @@ export class WaxSigningApi {
         signatures,
         whitelistedContracts,
         serializedTransaction,
-        startTime
+        startTime,
       } = event.data;
 
       if (!verified || !signatures) {
@@ -337,7 +363,7 @@ export class WaxSigningApi {
       return false;
     }
 
-    return !transaction.actions.find(action => !this.isWhitelisted(action));
+    return !transaction.actions.find((action) => !this.isWhitelisted(action));
   }
 
   private isWhitelisted(action: Action): boolean {

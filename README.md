@@ -73,6 +73,20 @@ const userAccount = await wax.login();
 
 Successful login will return the userAccount. It will also be available as the ```userAccount``` member on the ```wax``` instance. You can now use the eosjs ```api``` member...
 
+#### 2.1 Login combining proof system
+
+We could also combine proof system inside wax.login by passing optional nonce parameter onto the function
+
+```js
+const nonce = 'your_nonce_string';
+const userAccount = await wax.login(nonce);
+```
+
+later on we could get proof status of user by calling:
+
+```js
+const proofVerified = wax.proofVerified; // return true or false
+```
 
 ### 3. Use the eosjs Objects As Usual
 
@@ -267,6 +281,12 @@ TRUST scores are powered by [**Chain Champs**](https://www.chainchamps.com/blog/
 ### The Trust score provider can be found in
 ```
 wax.trustScoreProvider;
+```
+
+## Version
+Current version of waxjs could be retrieved using
+```js
+wax.version;
 ```
 
 ## Development
