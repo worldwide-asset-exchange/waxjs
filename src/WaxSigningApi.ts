@@ -357,13 +357,17 @@ export class WaxSigningApi {
   }
 
   private canAutoSign(transaction: Transaction): boolean {
-    const ua = navigator.userAgent.toLowerCase();
+    try {
+      const ua = navigator?.userAgent?.toLowerCase();
 
-    if (ua.search("chrome") === -1 && ua.search("safari") >= 0) {
-      return false;
+      if (!ua || (ua.search("chrome") === -1 && ua.search("safari") >= 0)) {
+        return false;
+      }
+
+      return !transaction.actions.find((action) => !this.isWhitelisted(action));
+    } catch (error) {
+      return false
     }
-
-    return !transaction.actions.find((action) => !this.isWhitelisted(action));
   }
 
   private isWhitelisted(action: Action): boolean {
