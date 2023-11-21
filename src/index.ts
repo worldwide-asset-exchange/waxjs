@@ -262,7 +262,8 @@ export class WaxJS {
 export function defaultTxVerifier(
   user: ILoginResponse,
   originalTx: Transaction,
-  augmentedTx: Transaction
+  augmentedTx: Transaction,
+  maxPayment: number = 1
 ): void {
   const { actions: originalActions } = originalTx;
   const { actions: augmentedActions } = augmentedTx;
@@ -318,11 +319,19 @@ export function defaultTxVerifier(
 
       if (
         extraAction.account === "eosio" &&
-        extraAction.name === "buyrambytes"
+        extraAction.name === "buyrambytes" &&
+        extraAction.data.receiver === user.account
       ) {
-        if (extraAction.data.receiver === user.account) {
-          continue;
-        }
+        continue;
+      }
+
+      if (
+        extraAction.account === "eosio" &&
+        extraAction.name === "powerup" &&
+        extraAction.data.payer === user.account &&
+        extraAction.data.receiver === user.account
+      ) {
+        continue;
       }
 
       throw new Error(

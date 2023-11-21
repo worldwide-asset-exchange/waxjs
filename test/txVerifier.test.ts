@@ -445,4 +445,144 @@ describe("test default tx verifier", function() {
       "Augmented transaction actions has an extra action from the original authorizing the user.\nOriginal"
     );
   });
+
+  it("Should allow if augmentedTx to buy powerup", async () => {
+    const user = {
+      account: "user1.wam",
+      keys: []
+    };
+    const originalTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        }
+      ]
+    };
+
+    const augmentedTx = {
+      actions: [
+        {
+          account: "eosio",
+          name: "powerup",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            payer: user.account,
+            receiver: user.account,
+            days: 1,
+            net_frac: 213,
+            cpu_frac: 123,
+            max_payment: "0.01000000 WAX",
+          }
+        },
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        }
+      ]
+    };
+    await expect(function() {
+      defaultTxVerifier(user, originalTx, augmentedTx);
+    }).not.to.throw();
+  });
+
+  it("Should not allow if augmentedTx buy powerup with receiver not user account", async () => {
+    const user = {
+      account: "user1.wam",
+      keys: []
+    };
+    const originalTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        }
+      ]
+    };
+
+    const augmentedTx = {
+      actions: [
+        {
+          account: "eosio",
+          name: "powerup",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            payer: user.account,
+            receiver: 'user2.wam',
+            days: 1,
+            net_frac: 213,
+            cpu_frac: 123,
+            max_payment: "0.01000000 WAX",
+          }
+        },
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        }
+      ]
+    };
+    await expect(function() {
+      defaultTxVerifier(user, originalTx, augmentedTx);
+    }).to.throw(
+      "Augmented transaction actions has an extra action from the original authorizing the user.\nOriginal"
+    );
+  });
 });
