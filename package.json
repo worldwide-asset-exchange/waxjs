@@ -1,10 +1,10 @@
 {
   "name": "@waxio/waxjs",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Javascript API for integration with the WAX Cloud Wallet.",
   "scripts": {
-    "build": "tsc",
-    "build-web": "webpack --config webpack.prod.js",
+    "build": "npm run genversion && tsc",
+    "build-web": "npm run genversion && webpack --config webpack.prod.js",
     "prettier": "prettier --write \"src/**/*.ts\" \"src/**/*.js\" \"test/**/*.ts\" \"test/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "test": "npm run lint && mocha -r ts-node/register test/**/*.test.ts",
@@ -12,10 +12,11 @@
     "docs:serve": "serve -s docs",
     "serve": "serve -s dist-web",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run lint && npx genversion --es6 src/version.ts",
+    "prepublishOnly": "npm run lint && npm run build && npm run build-web",
     "preversion": "npm run lint",
     "version": "npm run prettier && git add -A src",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "genversion": "genversion src/version.ts -e"
   },
   "author": "WAX",
   "homepage": "https://github.com/worldwide-asset-exchange/waxjs#readme",
