@@ -210,12 +210,14 @@ export class WaxSigningApi {
     const controller = new AbortController();
 
     setTimeout(() => controller.abort(), 5000);
-
+    const waxjsVersion = version || null;
+    
     const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
       body: JSON.stringify({
         freeBandwidth: !noModify,
         feeFallback,
         transaction: Object.values(serializedTransaction),
+        waxjsVersion
       }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -258,6 +260,7 @@ export class WaxSigningApi {
     feeFallback = true
   ): Promise<ISigningResponse> {
     const startTime = getCurrentTime();
+    const waxjsVersion = version || null;
     const confirmationWindow: Window =
       await this.waxEventSource.openEventSource(
         `${this.waxSigningURL}/cloud-wallet/signing/`,
@@ -267,6 +270,7 @@ export class WaxSigningApi {
           freeBandwidth: !noModify,
           transaction: serializedTransaction,
           type: "TRANSACTION",
+          waxjsVersion
         },
         window
       );
@@ -357,9 +361,13 @@ export class WaxSigningApi {
   }
 
   private canAutoSign(transaction: Transaction): boolean {
-    const ua = navigator.userAgent.toLowerCase();
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase();
 
-    if (ua.search("chrome") === -1 && ua.search("safari") >= 0) {
+      if (ua.search("chrome") === -1 && ua.search("safari") >= 0) {
+        return false;
+      }
+    } else {
       return false;
     }
 
