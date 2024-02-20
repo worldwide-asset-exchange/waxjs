@@ -12,7 +12,7 @@ import { WaxSigningApi } from "./WaxSigningApi";
 const PROOF_WAX = 1;
 const PROOF_USER = 2;
 export class WaxJS {
-  public readonly rpc: JsonRpc;
+  public rpc: JsonRpc;
 
   public api: Api;
   public user?: ILoginResponse;
@@ -27,6 +27,8 @@ export class WaxJS {
   private readonly feeFallback: boolean;
   private readonly metricURL: string;
   private readonly returnTempAccounts: boolean;
+  private chainName: string | null;
+  private chainId: string | null;
 
   private readonly verifyTx: (
     user: ILoginResponse,
@@ -77,6 +79,7 @@ export class WaxJS {
     verifyTx = defaultTxVerifier,
     metricURL = "",
     returnTempAccounts = false,
+    chainName = null,
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -96,8 +99,16 @@ export class WaxJS {
     ) => void;
     metricURL?: string;
     returnTempAccounts?: boolean;
+    chainName?: string;
   }) {
     this.rpc = new JsonRpc(rpcEndpoint);
+
+    this.chainName = chainName || null;
+    this.chainId = null;
+    if (chainName) {
+      this.setChainName(chainName);
+    }
+
     this.signingApi = new WaxSigningApi(
       waxSigningURL,
       waxAutoSigningURL,
@@ -135,6 +146,32 @@ export class WaxJS {
     }
 
     return this.user.account;
+  }
+
+  private async getChainInfoByChainName(chainName: string): Promise<any> {
+    const response = await this.rpc.get_table_rows({
+      json: true,
+      code: "registry.wax",
+      scope: "registry.wax",
+      table: "chains",
+    });
+    const chainInfo: any | null = response.rows.find(row => row.chain_name === chainName);
+
+    if (!chainInfo) {
+      // TODO: handle case chain info not exists
+    }
+
+    return chainInfo;
+  }
+
+  public async setChainName(chainName: string): Promise<void> {
+    const chainInfo = await this.getChainInfoByChainName(chainName);
+
+    if (!chainInfo) return;
+
+    this.rpc = new JsonRpc(chainInfo.endpoint);
+    this.chainId = chainInfo.chain_id;
+    this.chainName = chainName;
   }
 
   public async isAutoLoginAvailable(): Promise<boolean> {
@@ -217,7 +254,8 @@ export class WaxJS {
             originalTx,
             sigArgs.serializedTransaction,
             !this.freeBandwidth,
-            this.feeFallback
+            this.feeFallback,
+            this.chainId
           );
 
         const augmentedTx = await this.api.deserializeTransactionWithActions(

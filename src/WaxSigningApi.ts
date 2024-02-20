@@ -102,7 +102,8 @@ export class WaxSigningApi {
     transaction: Transaction,
     serializedTransaction: Uint8Array,
     noModify = false,
-    feeFallback = true
+    feeFallback = true,
+    chainId = null,
   ): Promise<ISigningResponse> {
     if (this.canAutoSign(transaction)) {
       try {
@@ -110,7 +111,8 @@ export class WaxSigningApi {
         const res = await this.signViaEndpoint(
           serializedTransaction,
           noModify,
-          feeFallback
+          feeFallback,
+          chainId
         );
         await this.metricLog(
           "waxjs.metric.auto_signing",
@@ -127,7 +129,8 @@ export class WaxSigningApi {
       serializedTransaction,
       this.signingWindow,
       noModify,
-      feeFallback
+      feeFallback,
+      chainId
     );
   }
   public async proofWindow(
@@ -205,7 +208,8 @@ export class WaxSigningApi {
   private async signViaEndpoint(
     serializedTransaction: Uint8Array,
     noModify = false,
-    feeFallback = true
+    feeFallback = true,
+    chainId = null,
   ): Promise<ISigningResponse> {
     const controller = new AbortController();
 
@@ -215,6 +219,7 @@ export class WaxSigningApi {
       body: JSON.stringify({
         freeBandwidth: !noModify,
         feeFallback,
+        chainId,
         transaction: Object.values(serializedTransaction),
       }),
       credentials: "include",
@@ -255,7 +260,8 @@ export class WaxSigningApi {
     serializedTransaction: Uint8Array,
     window?: Window,
     noModify = false,
-    feeFallback = true
+    feeFallback = true,
+    chainId = null,
   ): Promise<ISigningResponse> {
     const startTime = getCurrentTime();
     const confirmationWindow: Window =
@@ -264,6 +270,7 @@ export class WaxSigningApi {
         {
           startTime,
           feeFallback,
+          chainId,
           freeBandwidth: !noModify,
           transaction: serializedTransaction,
           type: "TRANSACTION",
