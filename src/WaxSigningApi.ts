@@ -210,7 +210,6 @@ export class WaxSigningApi {
     const controller = new AbortController();
 
     setTimeout(() => controller.abort(), 5000);
-    
     const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
       body: JSON.stringify({
         freeBandwidth: !noModify,
@@ -259,7 +258,6 @@ export class WaxSigningApi {
     feeFallback = true
   ): Promise<ISigningResponse> {
     const startTime = getCurrentTime();
-    const waxjsVersion = version || null;
     const confirmationWindow: Window =
       await this.waxEventSource.openEventSource(
         `${this.waxSigningURL}/cloud-wallet/signing/`,
