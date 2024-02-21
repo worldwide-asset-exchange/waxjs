@@ -210,14 +210,13 @@ export class WaxSigningApi {
     const controller = new AbortController();
 
     setTimeout(() => controller.abort(), 5000);
-    const waxjsVersion = version || null;
     
     const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
       body: JSON.stringify({
         freeBandwidth: !noModify,
         feeFallback,
         transaction: Object.values(serializedTransaction),
-        waxjsVersion
+        waxjsVersion: version
       }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -270,7 +269,7 @@ export class WaxSigningApi {
           freeBandwidth: !noModify,
           transaction: serializedTransaction,
           type: "TRANSACTION",
-          waxjsVersion
+          waxjsVersion: version
         },
         window
       );
@@ -367,8 +366,6 @@ export class WaxSigningApi {
       if (ua.search("chrome") === -1 && ua.search("safari") >= 0) {
         return false;
       }
-    } else {
-      return false;
     }
 
     return !transaction.actions.find((action) => !this.isWhitelisted(action));
