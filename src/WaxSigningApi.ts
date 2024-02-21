@@ -210,12 +210,12 @@ export class WaxSigningApi {
     const controller = new AbortController();
 
     setTimeout(() => controller.abort(), 5000);
-
     const response: any = await fetch(`${this.waxAutoSigningURL}signing`, {
       body: JSON.stringify({
         freeBandwidth: !noModify,
         feeFallback,
         transaction: Object.values(serializedTransaction),
+        waxjsVersion: version
       }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -267,6 +267,7 @@ export class WaxSigningApi {
           freeBandwidth: !noModify,
           transaction: serializedTransaction,
           type: "TRANSACTION",
+          waxjsVersion: version
         },
         window
       );
@@ -357,10 +358,12 @@ export class WaxSigningApi {
   }
 
   private canAutoSign(transaction: Transaction): boolean {
-    const ua = navigator.userAgent.toLowerCase();
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase();
 
-    if (ua.search("chrome") === -1 && ua.search("safari") >= 0) {
-      return false;
+      if (ua.search("chrome") === -1 && ua.search("safari") >= 0) {
+        return false;
+      }
     }
 
     return !transaction.actions.find((action) => !this.isWhitelisted(action));
