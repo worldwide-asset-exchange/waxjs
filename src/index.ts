@@ -146,7 +146,7 @@ export class WaxJS {
   }
 
   private async getChainInfoByChainName(chainName: string): Promise<any> {
-    const response = await this.rpc.get_table_rows({
+    const response = await this.registryRpc.get_table_rows({
       json: true,
       code: "registry.wax",
       scope: "registry.wax",
