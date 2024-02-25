@@ -13,6 +13,7 @@ const PROOF_WAX = 1;
 const PROOF_USER = 2;
 export class WaxJS {
   public rpc: JsonRpc;
+  public registryRpc: JsonRpc;
 
   public api: Api;
   public user?: ILoginResponse;
@@ -101,13 +102,9 @@ export class WaxJS {
     returnTempAccounts?: boolean;
     chainName?: string;
   }) {
-    this.rpc = new JsonRpc(rpcEndpoint);
+    this.registryRpc = new JsonRpc(rpcEndpoint);
 
-    this.chainName = chainName || null;
-    this.chainId = null;
-    if (chainName) {
-      this.setChainName(chainName);
-    }
+    this.setupChain(chainName);
 
     this.signingApi = new WaxSigningApi(
       waxSigningURL,
@@ -158,16 +155,21 @@ export class WaxJS {
     const chainInfo: any | null = response.rows.find(row => row.chain_name === chainName);
 
     if (!chainInfo) {
-      // TODO: handle case chain info not exists
+      throw new Error('Chain name not found.');
     }
 
     return chainInfo;
   }
 
-  public async setChainName(chainName: string): Promise<void> {
-    const chainInfo = await this.getChainInfoByChainName(chainName);
+  public async setupChain(chainName: string | null): Promise<void> {
+    if(!chainName) {
+      this.chainName = null;
+      this.chainId = null;
+      this.rpc = this.registryRpc;
+      return;
+    }
 
-    if (!chainInfo) return;
+    const chainInfo = await this.getChainInfoByChainName(chainName);
 
     this.rpc = new JsonRpc(chainInfo.endpoint);
     this.chainId = chainInfo.chain_id;
