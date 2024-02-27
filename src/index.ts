@@ -102,9 +102,10 @@ export class WaxJS {
     returnTempAccounts?: boolean;
     chainName?: string;
   }) {
-    this.registryRpc = new JsonRpc(rpcEndpoint);
+    this.rpc = this.registryRpc = new JsonRpc(rpcEndpoint);
 
-    this.setupChain(chainName);
+    this.chainName = chainName;
+    this.chainId = null;
 
     this.signingApi = new WaxSigningApi(
       waxSigningURL,
@@ -161,19 +162,20 @@ export class WaxJS {
     return chainInfo;
   }
 
-  public async setupChain(chainName: string | null): Promise<void> {
-    if(!chainName) {
-      this.chainName = null;
-      this.chainId = null;
-      this.rpc = this.registryRpc;
-      return;
-    }
-
+  public async switchToChain(chainName: string): Promise<void> {
     const chainInfo = await this.getChainInfoByChainName(chainName);
 
     this.rpc = new JsonRpc(chainInfo.endpoint);
     this.chainId = chainInfo.chain_id;
     this.chainName = chainName;
+
+    this.signingApi = new WaxSigningApi(
+      this.waxSigningURL,
+      this.waxAutoSigningURL,
+      this.rpc,
+      this.metricURL,
+      this.returnTempAccounts
+    );
   }
 
   public async isAutoLoginAvailable(): Promise<boolean> {
