@@ -146,14 +146,20 @@ export class WaxJS {
     return this.user.account;
   }
 
-  private async getChainInfoByChainName(chainName: string): Promise<any> {
+  public async getAvailableChains(): Promise<any[]> {
     const response = await this.registryRpc.get_table_rows({
       json: true,
       code: "registry.wax",
       scope: "registry.wax",
       table: "chains",
     });
-    const chainInfo: any | null = response.rows.find(row => row.chain_name === chainName);
+
+    return response.rows;
+  }
+
+  private async getChainInfoByChainName(chainName: string): Promise<any> {
+    const availableChains = await this.getAvailableChains();
+    const chainInfo: any | null = availableChains.find(chain => chain.chain_name === chainName);
 
     if (!chainInfo) {
       throw new Error('Chain name not found.');
