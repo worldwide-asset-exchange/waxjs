@@ -81,6 +81,8 @@ export class WaxJS {
     metricURL = "",
     returnTempAccounts = false,
     chainName = null,
+    registryEndpoint = null,
+    chainId = null,
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -101,11 +103,14 @@ export class WaxJS {
     metricURL?: string;
     returnTempAccounts?: boolean;
     chainName?: string;
+    registryEndpoint?: string;
+    chainId?: string;
   }) {
-    this.rpc = this.registryRpc = new JsonRpc(rpcEndpoint);
+    this.rpc = new JsonRpc(rpcEndpoint);
+    this.registryRpc = new JsonRpc(registryEndpoint || rpcEndpoint);
 
     this.chainName = chainName;
-    this.chainId = null;
+    this.chainId = chainId;
 
     this.signingApi = new WaxSigningApi(
       waxSigningURL,
@@ -168,12 +173,18 @@ export class WaxJS {
     return chainInfo;
   }
 
-  public async switchToChain(chainName: string): Promise<void> {
-    const chainInfo = await this.getChainInfoByChainName(chainName);
+  public async switchToChain(chainName: string | null): Promise<void> {
+    if (!chainName) {
+      this.rpc = this.registryRpc;
+      this.chainId = null;
+      this.chainName = null;
+    } else {
+      const chainInfo = await this.getChainInfoByChainName(chainName);
 
-    this.rpc = new JsonRpc(chainInfo.endpoint);
-    this.chainId = chainInfo.chain_id;
-    this.chainName = chainName;
+      this.rpc = new JsonRpc(chainInfo.endpoint);
+      this.chainId = chainInfo.chain_id;
+      this.chainName = chainName;
+    }
 
     this.signingApi = new WaxSigningApi(
       this.waxSigningURL,
