@@ -103,7 +103,7 @@ export class WaxSigningApi {
     serializedTransaction: Uint8Array,
     noModify = false,
     feeFallback = true,
-    chainId = null,
+    chainId: string | null = null,
   ): Promise<ISigningResponse> {
     if (this.canAutoSign(transaction)) {
       try {
@@ -209,7 +209,7 @@ export class WaxSigningApi {
     serializedTransaction: Uint8Array,
     noModify = false,
     feeFallback = true,
-    chainId = null,
+    chainId: string | null = null,
   ): Promise<ISigningResponse> {
     const controller = new AbortController();
 
@@ -261,7 +261,7 @@ export class WaxSigningApi {
     window?: Window,
     noModify = false,
     feeFallback = true,
-    chainId = null,
+    chainId: string | null = null,
   ): Promise<ISigningResponse> {
     const startTime = getCurrentTime();
     const confirmationWindow: Window =
