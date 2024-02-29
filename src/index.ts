@@ -8,6 +8,7 @@ import { getProofWaxRequiredKeys } from "./helpers";
 import { ILoginResponse } from "./interfaces";
 import { version } from "./version";
 import { WaxSigningApi } from "./WaxSigningApi";
+import { WaxActivateRequisition } from "./WaxActivateRequisition";
 
 const PROOF_WAX = 1;
 const PROOF_USER = 2;
@@ -18,6 +19,7 @@ export class WaxJS {
   public user?: ILoginResponse;
 
   private signingApi: WaxSigningApi;
+  private waxActivateRequisition: WaxActivateRequisition;
 
   private readonly apiSigner: SignatureProvider;
   private readonly waxSigningURL: string;
@@ -105,6 +107,11 @@ export class WaxJS {
       metricURL,
       returnTempAccounts
     );
+    this.waxActivateRequisition = new WaxActivateRequisition(
+      waxSigningURL,
+      this.rpc,
+      returnTempAccounts
+    );
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
     this.apiSigner = apiSigner;
@@ -132,6 +139,14 @@ export class WaxJS {
   public async login(nonce?: string): Promise<string> {
     if (!this.user) {
       this.receiveLogin(await this.signingApi.login(nonce));
+    }
+
+    return this.user.account;
+  }
+
+  public async activateRequisition(nonce?: string): Promise<string> {
+    if (!this.user) {
+      this.receiveLogin(await this.waxActivateRequisition.activateRequisition(nonce));
     }
 
     return this.user.account;
