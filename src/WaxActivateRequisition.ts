@@ -23,7 +23,7 @@ export class WaxActivateRequisition {
     this.walletURL = walletURL;
     this.rpc = rpc;
   }
-  public disActivate(): void {
+  public deactivate(): void {
     this.user = null;
   }
 
