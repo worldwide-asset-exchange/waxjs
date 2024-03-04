@@ -8,7 +8,7 @@ import { getProofWaxRequiredKeys } from "./helpers";
 import { ILoginResponse } from "./interfaces";
 import { version } from "./version";
 import { WaxSigningApi } from "./WaxSigningApi";
-import { WaxActivateRequisition } from "./WaxActivateRequisition";
+import { WaxActivateRequisition } from "./ActivationRequisition";
 
 const PROOF_WAX = 1;
 const PROOF_USER = 2;
@@ -79,6 +79,7 @@ export class WaxJS {
     verifyTx = defaultTxVerifier,
     metricURL = "",
     returnTempAccounts = false,
+    activationEndpoint = "https://api-api.mycloudwallet.com/v1/wcw",
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -98,6 +99,7 @@ export class WaxJS {
     ) => void;
     metricURL?: string;
     returnTempAccounts?: boolean;
+    activationEndpoint?: string;
   }) {
     this.rpc = new JsonRpc(rpcEndpoint);
     this.signingApi = new WaxSigningApi(
@@ -108,9 +110,7 @@ export class WaxJS {
       returnTempAccounts
     );
     this.waxActivateRequisition = new WaxActivateRequisition(
-      waxSigningURL,
-      this.rpc,
-      returnTempAccounts
+      activationEndpoint
     );
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
@@ -145,11 +145,11 @@ export class WaxJS {
   }
 
   public async activateRequisition(nonce?: string): Promise<string> {
-    if (!this.user) {
-      this.receiveLogin(await this.waxActivateRequisition.activateRequisition(nonce));
-    }
-
     return this.user.account;
+  }
+
+  public async openActivationRequisitionModal() {
+    await this.waxActivateRequisition.openModal();
   }
 
   public async isAutoLoginAvailable(): Promise<boolean> {
