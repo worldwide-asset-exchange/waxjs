@@ -30,6 +30,8 @@ export class WaxJS {
   private readonly returnTempAccounts: boolean;
   private chainName: string | null;
   private chainId: string | null;
+  private lightApiEndpoint: string | null;
+  private rpcEndpoint: string | null;
 
   private readonly verifyTx: (
     user: ILoginResponse,
@@ -64,6 +66,14 @@ export class WaxJS {
   }
   public get proofVerified(): boolean {
     return this.user?.isProofVerified;
+  }
+
+  public get lightApi(): string | null {
+    return this.lightApiEndpoint;
+  }
+
+  public get currentChainName(): string | null {
+    return this.chainName;
   }
 
   constructor({
@@ -107,6 +117,7 @@ export class WaxJS {
     chainId?: string;
   }) {
     this.rpc = new JsonRpc(rpcEndpoint);
+    this.rpcEndpoint = rpcEndpoint;
     this.registryRpc = new JsonRpc(registryEndpoint || rpcEndpoint);
 
     this.chainName = chainName;
@@ -178,13 +189,19 @@ export class WaxJS {
       this.rpc = this.registryRpc;
       this.chainId = null;
       this.chainName = null;
+      this.lightApiEndpoint = null;
     } else {
       const chainInfo = await this.getChainInfoByChainName(chainName);
 
       this.rpc = new JsonRpc(chainInfo.endpoint);
       this.chainId = chainInfo.chain_id;
+      this.lightApiEndpoint = chainInfo.simple_asset_url;
       this.chainName = chainName;
     }
+
+    console.log('switchToChain chainName', chainName);
+    console.log('switchToChain this.chainId', this.chainId);
+    console.log('switchToChain this.user', this.user);
 
     this.signingApi = new WaxSigningApi(
       this.waxSigningURL,
@@ -193,6 +210,8 @@ export class WaxJS {
       this.metricURL,
       this.returnTempAccounts
     );
+
+    this.receiveLogin(this.user);
   }
 
   public async isAutoLoginAvailable(): Promise<boolean> {
@@ -257,6 +276,14 @@ export class WaxJS {
   private receiveLogin(data: ILoginResponse): void {
     this.user = data;
 
+    if (Object.keys(data.sideChainAccount || {}).includes(this.chainName)) {
+      const sideChain = data.sideChainAccount[this.chainName];
+      this.user = {
+        ...this.user,
+        keys: [sideChain.public_keys],
+      }
+    }
+  
     const signatureProvider: SignatureProvider = {
       getAvailableKeys: async () => {
         return [
