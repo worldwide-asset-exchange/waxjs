@@ -276,11 +276,11 @@ export class WaxJS {
   private receiveLogin(data: ILoginResponse): void {
     this.user = data;
 
-    if (Object.keys(data.sideChainAccount || {}).includes(this.chainName)) {
-      const sideChain = data.sideChainAccount[this.chainName];
+    if (data?.sideChainAccount && Object.keys(data.sideChainAccount || {}).includes(this.chainName)) {
+      const sideChainAccount = data.sideChainAccount[this.chainName];
       this.user = {
         ...this.user,
-        keys: [sideChain.public_keys],
+        keys: [sideChainAccount.public_keys],
       }
     }
   
