@@ -11,8 +11,8 @@ export interface ISigningResponse {
 
 interface IAccountInfo {
   account_name: string;
-  verified: boolean,
-  public_keys: string
+  verified: boolean;
+  public_keys: string;
 }
 
 export interface ILoginResponse {

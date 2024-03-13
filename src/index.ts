@@ -1,7 +1,7 @@
 import { Api, JsonRpc } from "eosjs";
 import {
   SignatureProvider,
-  Transaction,
+  Transaction
 } from "eosjs/dist/eosjs-api-interfaces";
 import { ecc } from "eosjs/dist/eosjs-ecc-migration";
 import { getProofWaxRequiredKeys } from "./helpers";
@@ -92,7 +92,7 @@ export class WaxJS {
     returnTempAccounts = false,
     chainName = null,
     registryEndpoint = null,
-    chainId = null,
+    chainId = null
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -145,7 +145,7 @@ export class WaxJS {
     } else {
       // try to auto-login via endpoint
       if (tryAutoLogin) {
-        this.signingApi.tryAutologin().then(async (response) => {
+        this.signingApi.tryAutologin().then(async response => {
           if (response) {
             this.receiveLogin(await this.signingApi.login());
           }
@@ -167,21 +167,10 @@ export class WaxJS {
       json: true,
       code: "registry.wax",
       scope: "registry.wax",
-      table: "chains",
+      table: "chains"
     });
 
     return response.rows;
-  }
-
-  private async getChainInfoByChainName(chainName: string): Promise<any> {
-    const availableChains = await this.getAvailableChains();
-    const chainInfo: any | null = availableChains.find(chain => chain.chain_name === chainName);
-
-    if (!chainInfo) {
-      throw new Error('Chain name not found.');
-    }
-
-    return chainInfo;
   }
 
   public async switchToChain(chainName: string | null): Promise<void> {
@@ -199,9 +188,9 @@ export class WaxJS {
       this.chainName = chainName;
     }
 
-    console.log('switchToChain chainName', chainName);
-    console.log('switchToChain this.chainId', this.chainId);
-    console.log('switchToChain this.user', this.user);
+    console.log("switchToChain chainName", chainName);
+    console.log("switchToChain this.chainId", this.chainId);
+    console.log("switchToChain this.user", this.user);
 
     this.signingApi = new WaxSigningApi(
       this.waxSigningURL,
@@ -276,35 +265,40 @@ export class WaxJS {
   private receiveLogin(data: ILoginResponse): void {
     this.user = data;
 
-    if (data?.sideChainAccount && Object.keys(data.sideChainAccount || {}).includes(this.chainName)) {
+    if (
+      data?.sideChainAccount &&
+      Object.keys(data.sideChainAccount || {}).includes(this.chainName)
+    ) {
       const sideChainAccount = data.sideChainAccount[this.chainName];
       this.user = {
         ...this.user,
-        keys: [sideChainAccount.public_keys],
-      }
+        keys: [sideChainAccount.public_keys]
+      };
     }
-  
+
     const signatureProvider: SignatureProvider = {
       getAvailableKeys: async () => {
         return [
           ...this.user.keys,
           ...((this.apiSigner && (await this.apiSigner.getAvailableKeys())) ||
-            []),
+            [])
         ];
       },
-      sign: async (sigArgs) => {
+      sign: async sigArgs => {
         const originalTx = await this.api.deserializeTransactionWithActions(
           sigArgs.serializedTransaction
         );
 
-        const { serializedTransaction, signatures } =
-          await this.signingApi.signing(
-            originalTx,
-            sigArgs.serializedTransaction,
-            !this.freeBandwidth,
-            this.feeFallback,
-            this.chainId
-          );
+        const {
+          serializedTransaction,
+          signatures
+        } = await this.signingApi.signing(
+          originalTx,
+          sigArgs.serializedTransaction,
+          !this.freeBandwidth,
+          this.feeFallback,
+          this.chainId
+        );
 
         const augmentedTx = await this.api.deserializeTransactionWithActions(
           serializedTransaction
@@ -320,16 +314,16 @@ export class WaxJS {
             ...signatures,
             ...((this.apiSigner &&
               (await this.apiSigner.sign(sigArgs)).signatures) ||
-              []),
-          ],
+              [])
+          ]
         };
-      },
+      }
     };
 
     this.api = new Api({
       ...this.eosApiArgs,
       rpc: this.rpc,
-      signatureProvider,
+      signatureProvider
     });
     const transact = this.api.transact.bind(this.api);
     // We monkeypatch the transact method to overcome timeouts
@@ -342,6 +336,19 @@ export class WaxJS {
 
       return await transact(transaction, namedParams);
     };
+  }
+
+  private async getChainInfoByChainName(chainName: string): Promise<any> {
+    const availableChains = await this.getAvailableChains();
+    const chainInfo: any | null = availableChains.find(
+      chain => chain.chain_name === chainName
+    );
+
+    if (!chainInfo) {
+      throw new Error("Chain name not found.");
+    }
+
+    return chainInfo;
   }
 }
 
@@ -393,10 +400,10 @@ export function defaultTxVerifier(
               authorization: [
                 {
                   actor: "boost.wax",
-                  permission: "paybw",
-                },
+                  permission: "paybw"
+                }
               ],
-              data: {},
+              data: {}
             })
         ) {
           continue;
