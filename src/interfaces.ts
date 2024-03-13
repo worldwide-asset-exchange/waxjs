@@ -9,6 +9,12 @@ export interface ISigningResponse {
   signatures: string[];
 }
 
+interface IAccountInfo {
+  account_name: string;
+  verified: boolean,
+  public_keys: string
+}
+
 export interface ILoginResponse {
   account: string;
   keys: string[];
@@ -17,4 +23,5 @@ export interface ILoginResponse {
   avatarUrl?: string;
   trustScore?: number;
   isProofVerified?: any;
+  sideChainAccount?: Record<string, IAccountInfo>;
 }

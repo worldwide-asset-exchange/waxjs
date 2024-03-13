@@ -12,7 +12,8 @@ import { WaxSigningApi } from "./WaxSigningApi";
 const PROOF_WAX = 1;
 const PROOF_USER = 2;
 export class WaxJS {
-  public readonly rpc: JsonRpc;
+  public rpc: JsonRpc;
+  public registryRpc: JsonRpc;
 
   public api: Api;
   public user?: ILoginResponse;
@@ -27,6 +28,10 @@ export class WaxJS {
   private readonly feeFallback: boolean;
   private readonly metricURL: string;
   private readonly returnTempAccounts: boolean;
+  private chainName: string | null;
+  private chainId: string | null;
+  private lightApiEndpoint: string | null;
+  private rpcEndpoint: string | null;
 
   private readonly verifyTx: (
     user: ILoginResponse,
@@ -63,6 +68,14 @@ export class WaxJS {
     return this.user?.isProofVerified;
   }
 
+  public get lightApi(): string | null {
+    return this.lightApiEndpoint;
+  }
+
+  public get currentChainName(): string | null {
+    return this.chainName;
+  }
+
   constructor({
     rpcEndpoint,
     tryAutoLogin = true,
@@ -77,6 +90,9 @@ export class WaxJS {
     verifyTx = defaultTxVerifier,
     metricURL = "",
     returnTempAccounts = false,
+    chainName = null,
+    registryEndpoint = null,
+    chainId = null,
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -96,8 +112,17 @@ export class WaxJS {
     ) => void;
     metricURL?: string;
     returnTempAccounts?: boolean;
+    chainName?: string;
+    registryEndpoint?: string;
+    chainId?: string;
   }) {
     this.rpc = new JsonRpc(rpcEndpoint);
+    this.rpcEndpoint = rpcEndpoint;
+    this.registryRpc = new JsonRpc(registryEndpoint || rpcEndpoint);
+
+    this.chainName = chainName;
+    this.chainId = chainId;
+
     this.signingApi = new WaxSigningApi(
       waxSigningURL,
       waxAutoSigningURL,
@@ -135,6 +160,58 @@ export class WaxJS {
     }
 
     return this.user.account;
+  }
+
+  public async getAvailableChains(): Promise<any[]> {
+    const response = await this.registryRpc.get_table_rows({
+      json: true,
+      code: "registry.wax",
+      scope: "registry.wax",
+      table: "chains",
+    });
+
+    return response.rows;
+  }
+
+  private async getChainInfoByChainName(chainName: string): Promise<any> {
+    const availableChains = await this.getAvailableChains();
+    const chainInfo: any | null = availableChains.find(chain => chain.chain_name === chainName);
+
+    if (!chainInfo) {
+      throw new Error('Chain name not found.');
+    }
+
+    return chainInfo;
+  }
+
+  public async switchToChain(chainName: string | null): Promise<void> {
+    if (!chainName) {
+      this.rpc = this.registryRpc;
+      this.chainId = null;
+      this.chainName = null;
+      this.lightApiEndpoint = null;
+    } else {
+      const chainInfo = await this.getChainInfoByChainName(chainName);
+
+      this.rpc = new JsonRpc(chainInfo.endpoint);
+      this.chainId = chainInfo.chain_id;
+      this.lightApiEndpoint = chainInfo.simple_asset_url;
+      this.chainName = chainName;
+    }
+
+    console.log('switchToChain chainName', chainName);
+    console.log('switchToChain this.chainId', this.chainId);
+    console.log('switchToChain this.user', this.user);
+
+    this.signingApi = new WaxSigningApi(
+      this.waxSigningURL,
+      this.waxAutoSigningURL,
+      this.rpc,
+      this.metricURL,
+      this.returnTempAccounts
+    );
+
+    this.receiveLogin(this.user);
   }
 
   public async isAutoLoginAvailable(): Promise<boolean> {
@@ -199,6 +276,14 @@ export class WaxJS {
   private receiveLogin(data: ILoginResponse): void {
     this.user = data;
 
+    if (data?.sideChainAccount && Object.keys(data.sideChainAccount || {}).includes(this.chainName)) {
+      const sideChainAccount = data.sideChainAccount[this.chainName];
+      this.user = {
+        ...this.user,
+        keys: [sideChainAccount.public_keys],
+      }
+    }
+  
     const signatureProvider: SignatureProvider = {
       getAvailableKeys: async () => {
         return [
@@ -217,7 +302,8 @@ export class WaxJS {
             originalTx,
             sigArgs.serializedTransaction,
             !this.freeBandwidth,
-            this.feeFallback
+            this.feeFallback,
+            this.chainId
           );
 
         const augmentedTx = await this.api.deserializeTransactionWithActions(
