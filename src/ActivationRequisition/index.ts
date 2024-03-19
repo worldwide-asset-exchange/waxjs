@@ -1,3 +1,4 @@
+import { WaxJS } from "..";
 import { ILoginResponse, IWhitelistedContract } from "../interfaces";
 import { ModalOpener } from "./../Modal/ModalOpener";
 import { Content } from "./Content";
@@ -10,6 +11,7 @@ declare global {
 
 export interface RequisitionInfo {
   code: string;
+  qrCodeContent: string;
   expire: number;
 }
 
@@ -22,6 +24,7 @@ interface ActivatedData {
   trustScore?: number;
   isProofVerified?: any;
   token: string;
+  userAccount?: string;
 }
 
 class ActivationFetchError extends Error {
@@ -50,7 +53,7 @@ export class WaxActivateRequisition {
   private modalOpener: ModalOpener | null;
   private content: HTMLDivElement;
 
-  constructor(readonly activationEndpoint: string) {
+  constructor(readonly activationEndpoint: string, readonly waxObj: WaxJS) {
     this.activationEndpoint = activationEndpoint;
   }
 
@@ -60,9 +63,9 @@ export class WaxActivateRequisition {
 
   public async openModal() {
     const requisitionInfo: RequisitionInfo = await this.fetchActivationInfo(
-      document.location.origin
+      document.location.host
     );
-    this.content = await Content.createContent(requisitionInfo);
+    this.content = await Content.createContent(requisitionInfo, this.waxObj);
     this.modalOpener = new ModalOpener(this.content);
     this.modalOpener.openModal();
     this.checkActivation(requisitionInfo);
@@ -70,23 +73,47 @@ export class WaxActivateRequisition {
 
   private async updateModal() {
     const requisitionInfo: RequisitionInfo = await this.fetchActivationInfo(
-      document.location.origin
+      document.location.host
     );
-    this.content = await Content.createContent(requisitionInfo);
+    this.content = await Content.createContent(requisitionInfo, this.waxObj);
     this.modalOpener.updateContent(this.content);
     this.checkActivation(requisitionInfo);
+  }
+
+  private async updateActivationContent() {
+    const loadingSection: HTMLDivElement = this.content.querySelector(
+      "#activation-loading"
+    );
+    const activationMobileSection: HTMLDivElement = this.content.querySelector(
+      "#activation-mobile-section"
+    );
+    const activationDesktopSection: HTMLDivElement = this.content.querySelector(
+      "#activation-desktop-section"
+    );
+
+    loadingSection.style.display = "flex";
+    activationMobileSection.style.display = "none";
+    activationDesktopSection.style.display = "none";
+
+    setTimeout(() => {
+      this.modalOpener.closeModal();
+    }, 2000);
   }
 
   private async checkActivation(requisitionInfo: RequisitionInfo) {
     try {
       const activatedData = await this.checkIfActivated(
         requisitionInfo,
-        document.location.origin
+        document.location.host
       );
       if (!!activatedData) {
         // Display success status in ActivationContent then eventually modalOpener.closeModal();
         const { token, ...loginResponse } = activatedData;
+        console.log(activatedData);
+
         this.user = loginResponse;
+
+        this.updateActivationContent();
         return this.user.account;
       }
     } catch (error) {
@@ -94,15 +121,24 @@ export class WaxActivateRequisition {
         error instanceof ActivationExpiredError ||
         error instanceof InvalidCodeError
       ) {
-        const regenerateButton: HTMLButtonElement = this.content.querySelector(
-          "#regenerate-requisition-info-button"
+        const activationExpiredSection: HTMLDivElement = this.content.querySelector(
+          "#activation-expired-section"
+        );
+        activationExpiredSection.style.display = "flex";
+
+        const activationScanningSection: HTMLDivElement = this.content.querySelector(
+          "#activation-scanning-section"
+        );
+        activationScanningSection.style.display = "none";
+
+        const regenerateButton: HTMLDivElement = this.content.querySelector(
+          "#requisition-generate-new-code"
         );
 
         if (regenerateButton) {
           regenerateButton.addEventListener("click", async () => {
             await this.updateModal();
           });
-          regenerateButton.disabled = false;
         }
       } else {
         // Output other errors

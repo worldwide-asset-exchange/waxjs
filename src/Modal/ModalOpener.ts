@@ -11,6 +11,9 @@ export class ModalOpener {
     // Create the modal container
     this.modalElement = document.createElement("div");
     this.modalElement.classList.add("modal-overlay");
+    const closeIcon = this.content.querySelector(
+      "#activation-requisition-close-icon"
+    );
 
     // Apply styles to the modal
     this.modalElement.style.position = "fixed";
@@ -18,7 +21,7 @@ export class ModalOpener {
     this.modalElement.style.left = "0";
     this.modalElement.style.width = "100%";
     this.modalElement.style.height = "100%";
-    this.modalElement.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    this.modalElement.style.backgroundColor = "rgba(0, 0, 0, 0.3)";
     this.modalElement.style.display = "none";
     this.modalElement.style.display = "flex";
     this.modalElement.style.alignItems = "center";
@@ -41,6 +44,13 @@ export class ModalOpener {
         this.handleOverlayClick.bind(this)
       );
     }
+
+    if (closeIcon) {
+      closeIcon.addEventListener("click", () => {
+        this.closeModal();
+      });
+    }
+
     return this;
   }
 

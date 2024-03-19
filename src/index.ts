@@ -110,7 +110,8 @@ export class WaxJS {
       returnTempAccounts
     );
     this.waxActivateRequisition = new WaxActivateRequisition(
-      activationEndpoint
+      activationEndpoint,
+      this
     );
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
@@ -227,13 +228,15 @@ export class WaxJS {
           sigArgs.serializedTransaction
         );
 
-        const { serializedTransaction, signatures } =
-          await this.signingApi.signing(
-            originalTx,
-            sigArgs.serializedTransaction,
-            !this.freeBandwidth,
-            this.feeFallback
-          );
+        const {
+          serializedTransaction,
+          signatures,
+        } = await this.signingApi.signing(
+          originalTx,
+          sigArgs.serializedTransaction,
+          !this.freeBandwidth,
+          this.feeFallback
+        );
 
         const augmentedTx = await this.api.deserializeTransactionWithActions(
           serializedTransaction
