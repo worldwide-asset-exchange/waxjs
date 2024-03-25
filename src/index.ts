@@ -5,7 +5,7 @@ import {
 } from "eosjs/dist/eosjs-api-interfaces";
 import { ecc } from "eosjs/dist/eosjs-ecc-migration";
 import { getProofWaxRequiredKeys } from "./helpers";
-import { ILoginResponse } from "./interfaces";
+import { ILoginResponse, IProof } from "./interfaces";
 import { version } from "./version";
 import { WaxSigningApi } from "./WaxSigningApi";
 
@@ -66,6 +66,9 @@ export class WaxJS {
   }
   public get proofVerified(): boolean {
     return this.user?.isProofVerified;
+  }
+  public get proof(): IProof {
+    return this.user?.proof;
   }
 
   public get lightApi(): string | null {

@@ -15,6 +15,14 @@ interface IAccountInfo {
   public_keys: string;
 }
 
+export interface IProof {
+  message: string;
+  referrer: string;
+  nonce: string;
+  userAccount: string;
+  signature: string;
+}
+
 export interface ILoginResponse {
   account: string;
   keys: string[];
@@ -24,4 +32,5 @@ export interface ILoginResponse {
   trustScore?: number;
   isProofVerified?: any;
   sideChainAccount?: Record<string, IAccountInfo>;
+  proof?: IProof;
 }
