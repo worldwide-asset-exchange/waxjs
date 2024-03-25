@@ -299,6 +299,7 @@ export class WaxSigningApi {
       proof
     } = event.data;
     let isProofVerified = false;
+    let proofDetails = null;
     if (!verified) {
       throw new Error("User declined to share their user account");
     }
@@ -314,6 +315,13 @@ export class WaxSigningApi {
         message,
         await getProofWaxRequiredKeys(this.rpc.endpoint)
       );
+      proofDetails = {
+        message,
+        referrer: proof.data.referer,
+        nonce: this.nonce,
+        userAccount,
+        signature: proof.data.signature
+      };
     }
 
     this.whitelistedContracts = whitelistedContracts || [];
@@ -324,7 +332,8 @@ export class WaxSigningApi {
       createData,
       avatarUrl,
       trustScore,
-      isProofVerified
+      isProofVerified,
+      proof: proofDetails
     };
     return true;
   }
