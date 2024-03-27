@@ -80,6 +80,8 @@ export class WaxJS {
     metricURL = "",
     returnTempAccounts = false,
     activationEndpoint = "https://api-api.mycloudwallet.com/v1/wcw",
+    relayEndpoint = "https://relay.wax.io/graphql",
+    relayRegion = "us-east-2",
   }: {
     rpcEndpoint: string;
     userAccount?: string;
@@ -100,6 +102,8 @@ export class WaxJS {
     metricURL?: string;
     returnTempAccounts?: boolean;
     activationEndpoint?: string;
+    relayEndpoint?: string;
+    relayRegion?: string;
   }) {
     this.rpc = new JsonRpc(rpcEndpoint);
     this.signingApi = new WaxSigningApi(
@@ -111,7 +115,9 @@ export class WaxJS {
     );
     this.waxActivateRequisition = new WaxActivateRequisition(
       activationEndpoint,
-      this
+      this,
+      relayEndpoint,
+      relayRegion
     );
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
@@ -150,7 +156,10 @@ export class WaxJS {
   }
 
   public async openActivationRequisitionModal() {
-    await this.waxActivateRequisition.openModal();
+    const loginData = await this.waxActivateRequisition.openModal();
+    if(loginData) {
+      this.receiveLogin(loginData);
+    }
   }
 
   public async isAutoLoginAvailable(): Promise<boolean> {
@@ -269,10 +278,15 @@ export class WaxJS {
     // By pre-creating the pop-up window we will interact with,
     // we ensure that it is not going to be rejected due to a delayed
     // pop up that would otherwise occur post transaction creation
+    const _this = this;
     this.api.transact = async (transaction, namedParams) => {
-      await this.signingApi.prepareTransaction(transaction);
+      if(this.user?.token) {
+        return await _this.waxActivateRequisition.signTransaction(transaction)
+      } else {
+        await this.signingApi.prepareTransaction(transaction);
+        return await transact(transaction, namedParams);
+      }
 
-      return await transact(transaction, namedParams);
     };
   }
 }

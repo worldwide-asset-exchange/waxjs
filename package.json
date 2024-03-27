@@ -1,6 +1,6 @@
 {
   "name": "@waxio/waxjs",
-  "version": "1.8.0-beta-activate-modal",
+  "version": "1.8.0-beta-activate-modal-2",
   "description": "Javascript API for integration with the WAX Cloud Wallet.",
   "scripts": {
     "build": "npm run genversion && tsc",
@@ -43,6 +43,7 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
+    "aws-amplify": "^5.3.6",
     "eosjs": "^22.1.0",
     "genversion": "^3.1.1",
     "qrcode": "^1.5.3",

@@ -17,4 +17,5 @@ export interface ILoginResponse {
   avatarUrl?: string;
   trustScore?: number;
   isProofVerified?: any;
+  token?: string;
 }

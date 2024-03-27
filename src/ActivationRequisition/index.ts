@@ -2,12 +2,34 @@ import { WaxJS } from "..";
 import { ILoginResponse, IWhitelistedContract } from "../interfaces";
 import { ModalOpener } from "./../Modal/ModalOpener";
 import { Content } from "./Content";
+import { API, Amplify, graphqlOperation } from 'aws-amplify';
+import { GraphQLSubscription } from '@aws-amplify/api';
+
+// export const LS_ACTIVATION_KEY = 'dapp_activated';
 
 declare global {
   interface Window {
     closeCustomPopup?: () => void;
   }
 }
+
+const publish2channel = /* GraphQL */ `
+    mutation Publish2channel($data: AWSJSON!, $name: String!) {
+        publish2channel(data: $data, name: $name) {
+            data
+            name
+            __typename
+        }
+    }
+`;
+
+type Subscribe2channelSubscription = {
+  subscribe2channel?: {
+    __typename: 'Channel';
+    data: string;
+    name: string;
+  } | null;
+};
 
 export interface RequisitionInfo {
   code: string;
@@ -25,6 +47,15 @@ interface ActivatedData {
   isProofVerified?: any;
   token: string;
   userAccount?: string;
+}
+
+export interface TransactionInfo {
+  actions: any;
+}
+
+export interface TransactionResult {
+  status: 'approved' | 'rejected' | 'error';
+  result?: any;
 }
 
 class ActivationFetchError extends Error {
@@ -53,8 +84,21 @@ export class WaxActivateRequisition {
   private modalOpener: ModalOpener | null;
   private content: HTMLDivElement;
 
-  constructor(readonly activationEndpoint: string, readonly waxObj: WaxJS) {
+
+  constructor(
+    readonly activationEndpoint: string,
+    readonly waxObj: WaxJS,
+    readonly relayEndpoint: string,
+    readonly relayRegion: string
+  ) {
     this.activationEndpoint = activationEndpoint;
+
+    const myAppConfig = {
+      aws_appsync_graphqlEndpoint: relayEndpoint,
+      aws_appsync_region: relayEndpoint,
+      aws_appsync_authenticationType: 'AWS_LAMBDA',
+    };
+    Amplify.configure(myAppConfig);
   }
 
   public deactivate(): void {
@@ -68,7 +112,85 @@ export class WaxActivateRequisition {
     this.content = await Content.createContent(requisitionInfo, this.waxObj);
     this.modalOpener = new ModalOpener(this.content);
     this.modalOpener.openModal();
-    this.checkActivation(requisitionInfo);
+    return this.checkActivation(requisitionInfo);
+  }
+
+  public async signTransaction(transaction: any) {
+    // const activatedDate = JSON.parse(localStorage.getItem(LS_ACTIVATION_KEY));
+    const { token } = this.user;
+    const txInfo: TransactionInfo = {
+      actions: transaction,
+    };
+    const res = API.graphql(
+      graphqlOperation(
+        publish2channel,
+        {
+          name: `tx_${this.user.account}`,
+          data: JSON.stringify(txInfo),
+        },
+        JSON.stringify({
+          account: this.user.account,
+          token: token,
+          svc: document.location.host,
+          mode: 'dapp',
+        }),
+      ),
+    );
+    return new Promise((resolve, reject) => {
+      let subscription;
+      console.log(`start listening...`)
+      try {
+        const query = `
+            subscription Subscribe2channel($name: String!) {
+                subscribe2channel(name: $name) {
+                    data
+                    name
+                    __typename
+                }
+            }
+        `
+        //Subscribe via WebSockets
+        const graphqlOption = graphqlOperation(
+          query,
+          {
+            name: `txres_${this.user.account}`,
+          },
+          JSON.stringify({
+            account: this.user.account,
+            token: token,
+            svc: document.location.host,
+            mode: 'dapp',
+          }),
+        );
+
+        subscription = API.graphql<GraphQLSubscription<Subscribe2channelSubscription>>(
+          graphqlOption,
+        ).subscribe({
+          next: ({ provider: _, value }) => {
+            const txRes: TransactionResult = JSON.parse(value.data.subscribe2channel.data);
+            switch (txRes.status) {
+              case 'approved':
+                resolve(txRes);
+                break;
+              case'rejected':
+                reject(new Error('User rejected the transaction'));
+                break;
+              default:
+                reject(new Error('Unknown status'));
+                break;
+            }
+            subscription?.unsubscribe();
+          },
+          error: error => {
+            subscription?.unsubscribe();
+            reject(error);
+          },
+        });
+      } catch (error) {
+        subscription?.unsubscribe();
+        reject(error);
+      }
+    });
   }
 
   private async updateModal() {
@@ -108,13 +230,10 @@ export class WaxActivateRequisition {
       );
       if (!!activatedData) {
         // Display success status in ActivationContent then eventually modalOpener.closeModal();
-        const { token, ...loginResponse } = activatedData;
-        console.log(activatedData);
-
-        this.user = loginResponse;
+        this.user = activatedData;
 
         this.updateActivationContent();
-        return this.user.account;
+        return this.user;
       }
     } catch (error) {
       if (
@@ -207,8 +326,6 @@ export class WaxActivateRequisition {
 
           const data = await response.json();
 
-          console.log("data", data);
-
           if (response.status === 202) {
             console.log("Continuing pulling checkActivation");
           } else if (response.status === 200) {
@@ -225,7 +342,7 @@ export class WaxActivateRequisition {
           clearInterval(intervalId);
           reject(error);
         }
-      }, 15_000);
+      }, 5_000);
     });
   }
 }
