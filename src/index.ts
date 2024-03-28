@@ -32,6 +32,7 @@ export class WaxJS {
   private chainId: string | null;
   private lightApiEndpoint: string | null;
   private rpcEndpoint: string | null;
+  private market_url: string | null;
 
   private readonly verifyTx: (
     user: ILoginResponse,
@@ -73,6 +74,10 @@ export class WaxJS {
 
   public get lightApi(): string | null {
     return this.lightApiEndpoint;
+  }
+
+  public get marketplaceApi(): string | null {
+    return this.market_url;
   }
 
   public get currentChainName(): string | null {
@@ -182,6 +187,7 @@ export class WaxJS {
       this.chainId = null;
       this.chainName = null;
       this.lightApiEndpoint = null;
+      this.market_url = null;
     } else {
       const chainInfo = await this.getChainInfoByChainName(chainName);
 
@@ -189,6 +195,7 @@ export class WaxJS {
       this.chainId = chainInfo.chain_id;
       this.lightApiEndpoint = chainInfo.simple_asset_url;
       this.chainName = chainName;
+      this.market_url = chainInfo.market_url;
     }
 
     console.log("switchToChain chainName", chainName);
