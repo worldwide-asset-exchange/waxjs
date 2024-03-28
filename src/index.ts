@@ -100,7 +100,7 @@ export class WaxJS {
     returnTempAccounts = false,
     chainName = null,
     registryEndpoint = null,
-    chainId = null,
+    chainId = null
   }: {
     rpcEndpoint: string;
     userAccount?: string;
