@@ -19,3 +19,10 @@ export interface ILoginResponse {
   isProofVerified?: any;
   token?: string;
 }
+
+export interface IDappInfo {
+  name: string;
+  logoUrl?: string;
+  schema?: string;
+  description?: string;
+}
