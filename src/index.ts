@@ -136,7 +136,8 @@ export class WaxJS {
       waxAutoSigningURL,
       this.rpc,
       metricURL,
-      returnTempAccounts
+      returnTempAccounts,
+      this.chainId
     );
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
@@ -256,12 +257,16 @@ export class WaxJS {
     }
     return false;
   }
+
   public async waxProof(nonce: string, verify: boolean = true): Promise<any> {
     if (!this.user) {
       throw new Error("User is not logged in");
     }
-    const data = await this.signingApi.proofWindow(nonce, PROOF_WAX, null);
-    const message = `cloudwallet-verification-${data.referer}-${nonce}-${data.accountName}`;
+    const data = await this.signingApi.proofWindow(nonce, PROOF_WAX, null, this.chainId);
+    let message = `cloudwallet-verification-${data.referer}-${nonce}-${data.accountName}`;
+    if (this.chainId) {
+      message += '-' + this.chainId;
+    }
     if (!verify) {
       return { ...data, message };
     }

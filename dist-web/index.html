@@ -25,12 +25,15 @@
 <button id="sign" onclick=sign() >Sign transaction</button><br><br>
 <label>Current Message</label><h3 id="current"></h3><br><br>
 <hr>
+<button id="proof" onclick=proof() >Proof</button><br><br>
+<hr>
 <label>Transaction Results</label>
 <h2 id="response"></h2>
 
 <script>
   const wax = new waxjs.WaxJS({
-    rpcEndpoint: 'https://wax.greymass.com'
+    rpcEndpoint: 'https://wax.greymass.com',
+    chainId: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4'
   });
   // const wax = new waxjs.WaxJS({
   //   rpcEndpoint: 'http://wax-all.test:8888',
@@ -41,9 +44,14 @@
 
   async function login() {
     try {
-      const userAccount = await wax.login();
+      const userAccount = await wax.login('noncerandom');
       document.getElementById('updater').value = userAccount;
       await getCurrentMessage();
+      if (wax.user.isProofVerified) {
+        document.getElementById('response').append(' User login proof is valid');
+      } else {
+        document.getElementById('response').append(' User login proof is invalid');
+      }
     } catch(e) {
       document.getElementById('response').append(e.message);
     }
@@ -97,6 +105,19 @@
 
     const message = res.rows[0] ? res.rows[0].message : `<No message is set for ${wax.userAccount}>`;
     document.getElementById('current').textContent = message;
+  }
+
+  async function proof() {
+    try {
+      const verifyResult = await wax.waxProof('abc', true);
+      if (verifyResult) {
+        document.getElementById('response').append(' Proof is valid');
+      } else {
+        document.getElementById('response').append(' Proof is invalid');
+      }
+    } catch(e) {
+      document.getElementById('response').append(e.message);
+    }
   }
 
   // set a random value to the initial message value

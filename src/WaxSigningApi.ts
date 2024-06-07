@@ -34,7 +34,8 @@ export class WaxSigningApi {
     readonly waxAutoSigningURL: string,
     readonly rpc: JsonRpc,
     readonly metricURL?: string,
-    readonly returnTempAccount?: boolean
+    readonly returnTempAccount?: boolean,
+    readonly chainId?: string
   ) {
     this.waxEventSource = new WaxEventSource(waxSigningURL);
     this.metricURL = metricURL;
@@ -136,7 +137,8 @@ export class WaxSigningApi {
   public async proofWindow(
     nonce: string,
     type: integer,
-    description: string | null
+    description: string | null,
+    chainId?: string
   ): Promise<any> {
     const verifyUrl = `${this.waxSigningURL}/cloud-wallet/verify`;
     const referWindow: Window = await this.waxEventSource.openEventSource(
@@ -145,7 +147,8 @@ export class WaxSigningApi {
         type: "VERIFY",
         nonce,
         proof_type: type,
-        description
+        description,
+        chainId
       }
     );
     return this.waxEventSource.onceEvent(
@@ -309,7 +312,10 @@ export class WaxSigningApi {
     }
     if (proof?.verified && this.nonce) {
       // handle proof logic
-      const message = `cloudwallet-verification-${proof.data.referer}-${this.nonce}-${userAccount}`;
+      let message = `cloudwallet-verification-${proof.data.referer}-${this.nonce}-${userAccount}`;
+      if (this.chainId) {
+        message += `-${this.chainId}`;
+      }
       isProofVerified = ecc.verify(
         proof.data.signature,
         message,
