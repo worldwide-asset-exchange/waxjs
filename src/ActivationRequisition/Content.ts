@@ -13,7 +13,7 @@ import {
   createLogoImage,
   createMobileIcon,
   createScanIcon,
-  createTextWithIcon,
+  createTextWithIcon
 } from "../helpers";
 import { IRequisitionInfo } from "./index";
 
@@ -160,7 +160,7 @@ export class Content {
       height: 192,
       color: "#000000",
       background: "transparent",
-      ecl: "M",
+      ecl: "M"
     });
 
     // Create the SVG element
@@ -185,7 +185,9 @@ export class Content {
     return button;
   }
 
-  private static async createMobileContainer(requisitionInfo: IRequisitionInfo) {
+  private static async createMobileContainer(
+    requisitionInfo: IRequisitionInfo
+  ) {
     const container = createFlexDiv("column", "8px");
     container.id = "activation-mobile-section";
     container.style.display = "flex";
