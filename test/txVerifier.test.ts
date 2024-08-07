@@ -489,7 +489,7 @@ describe("test default tx verifier", function() {
             days: 1,
             net_frac: 213,
             cpu_frac: 123,
-            max_payment: "0.01000000 WAX",
+            max_payment: "0.01000000 WAX"
           }
         },
         {
@@ -554,11 +554,11 @@ describe("test default tx verifier", function() {
           ],
           data: {
             payer: user.account,
-            receiver: 'user2.wam',
+            receiver: "user2.wam",
             days: 1,
             net_frac: 213,
             cpu_frac: 123,
-            max_payment: "0.01000000 WAX",
+            max_payment: "0.01000000 WAX"
           }
         },
         {

@@ -9,7 +9,7 @@ import { getProofWaxRequiredKeys } from "./helpers";
 import {
   ILoginResponse,
   ISigningResponse,
-  IWhitelistedContract,
+  IWhitelistedContract
 } from "./interfaces";
 import { version } from "./version";
 import { WaxEventSource } from "./WaxEventSource";
@@ -34,7 +34,8 @@ export class WaxSigningApi {
     readonly waxAutoSigningURL: string,
     readonly rpc: JsonRpc,
     readonly metricURL?: string,
-    readonly returnTempAccount?: boolean
+    readonly returnTempAccount?: boolean,
+    readonly chainId?: string
   ) {
     this.waxEventSource = new WaxEventSource(waxSigningURL);
     this.metricURL = metricURL;
@@ -88,9 +89,9 @@ export class WaxSigningApi {
           method: "POST",
           headers: {
             Accept: "application/json",
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
-          body: JSON.stringify({ name, value, tags }),
+          body: JSON.stringify({ name, value, tags })
         });
       }
     } catch (e) {
@@ -102,7 +103,8 @@ export class WaxSigningApi {
     transaction: Transaction,
     serializedTransaction: Uint8Array,
     noModify = false,
-    feeFallback = true
+    feeFallback = true,
+    chainId: string | null = null
   ): Promise<ISigningResponse> {
     if (this.canAutoSign(transaction)) {
       try {
@@ -110,7 +112,8 @@ export class WaxSigningApi {
         const res = await this.signViaEndpoint(
           serializedTransaction,
           noModify,
-          feeFallback
+          feeFallback,
+          chainId
         );
         await this.metricLog(
           "waxjs.metric.auto_signing",
@@ -127,13 +130,15 @@ export class WaxSigningApi {
       serializedTransaction,
       this.signingWindow,
       noModify,
-      feeFallback
+      feeFallback,
+      chainId
     );
   }
   public async proofWindow(
     nonce: string,
     type: integer,
-    description: string | null
+    description: string | null,
+    chainId?: string
   ): Promise<any> {
     const verifyUrl = `${this.waxSigningURL}/cloud-wallet/verify`;
     const referWindow: Window = await this.waxEventSource.openEventSource(
@@ -143,6 +148,7 @@ export class WaxSigningApi {
         nonce,
         proof_type: type,
         description,
+        chainId
       }
     );
     return this.waxEventSource.onceEvent(
@@ -184,7 +190,7 @@ export class WaxSigningApi {
     }
     const response = await fetch(url.toString(), {
       credentials: "include",
-      method: "get",
+      method: "get"
     });
 
     if (!response.ok) {
@@ -205,7 +211,8 @@ export class WaxSigningApi {
   private async signViaEndpoint(
     serializedTransaction: Uint8Array,
     noModify = false,
-    feeFallback = true
+    feeFallback = true,
+    chainId: string | null = null
   ): Promise<ISigningResponse> {
     const controller = new AbortController();
 
@@ -214,13 +221,14 @@ export class WaxSigningApi {
       body: JSON.stringify({
         freeBandwidth: !noModify,
         feeFallback,
+        chainId,
         transaction: Object.values(serializedTransaction),
         waxjsVersion: version
       }),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       method: "POST",
-      signal: controller.signal,
+      signal: controller.signal
     });
 
     if (!response.ok) {
@@ -255,22 +263,23 @@ export class WaxSigningApi {
     serializedTransaction: Uint8Array,
     window?: Window,
     noModify = false,
-    feeFallback = true
+    feeFallback = true,
+    chainId: string | null = null
   ): Promise<ISigningResponse> {
     const startTime = getCurrentTime();
-    const confirmationWindow: Window =
-      await this.waxEventSource.openEventSource(
-        `${this.waxSigningURL}/cloud-wallet/signing/`,
-        {
-          startTime,
-          feeFallback,
-          freeBandwidth: !noModify,
-          transaction: serializedTransaction,
-          type: "TRANSACTION",
-          waxjsVersion: version
-        },
-        window
-      );
+    const confirmationWindow: Window = await this.waxEventSource.openEventSource(
+      `${this.waxSigningURL}/cloud-wallet/signing/`,
+      {
+        startTime,
+        feeFallback,
+        chainId,
+        freeBandwidth: !noModify,
+        transaction: serializedTransaction,
+        type: "TRANSACTION",
+        waxjsVersion: version
+      },
+      window
+    );
 
     return this.waxEventSource.onceEvent(
       confirmationWindow,
@@ -290,9 +299,10 @@ export class WaxSigningApi {
       createData,
       avatar_url: avatarUrl,
       trustScore,
-      proof,
+      proof
     } = event.data;
     let isProofVerified = false;
+    let proofDetails = null;
     if (!verified) {
       throw new Error("User declined to share their user account");
     }
@@ -302,12 +312,22 @@ export class WaxSigningApi {
     }
     if (proof?.verified && this.nonce) {
       // handle proof logic
-      const message = `cloudwallet-verification-${proof.data.referer}-${this.nonce}-${userAccount}`;
+      let message = `cloudwallet-verification-${proof.data.referer}-${this.nonce}-${userAccount}`;
+      if (this.chainId) {
+        message += `-${this.chainId}`;
+      }
       isProofVerified = ecc.verify(
         proof.data.signature,
         message,
         await getProofWaxRequiredKeys(this.rpc.endpoint)
       );
+      proofDetails = {
+        message,
+        referrer: proof.data.referer,
+        nonce: this.nonce,
+        userAccount,
+        signature: proof.data.signature
+      };
     }
 
     this.whitelistedContracts = whitelistedContracts || [];
@@ -319,6 +339,7 @@ export class WaxSigningApi {
       avatarUrl,
       trustScore,
       isProofVerified,
+      proof: proofDetails
     };
     return true;
   }
@@ -332,7 +353,7 @@ export class WaxSigningApi {
         signatures,
         whitelistedContracts,
         serializedTransaction,
-        startTime,
+        startTime
       } = event.data;
 
       if (!verified || !signatures) {
@@ -358,7 +379,7 @@ export class WaxSigningApi {
   }
 
   private canAutoSign(transaction: Transaction): boolean {
-    if (typeof navigator !== 'undefined') {
+    if (typeof navigator !== "undefined") {
       const ua = navigator.userAgent.toLowerCase();
 
       if (ua.search("chrome") === -1 && ua.search("safari") >= 0) {
@@ -366,7 +387,7 @@ export class WaxSigningApi {
       }
     }
 
-    return !transaction.actions.find((action) => !this.isWhitelisted(action));
+    return !transaction.actions.find(action => !this.isWhitelisted(action));
   }
 
   private isWhitelisted(action: Action): boolean {

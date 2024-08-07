@@ -6,30 +6,36 @@ import {
 import { ecc } from "eosjs/dist/eosjs-ecc-migration";
 import { WaxActivateRequisition } from "./ActivationRequisition";
 import { getProofWaxRequiredKeys } from "./helpers";
-import { IDappInfo, ILoginResponse } from "./interfaces";
+import { IDappInfo, ILoginResponse, IProof } from "./interfaces";
 import { version } from "./version";
 import { WaxSigningApi } from "./WaxSigningApi";
 
 const PROOF_WAX = 1;
 const PROOF_USER = 2;
 export class WaxJS {
-           public readonly rpc: JsonRpc;
+  public rpc: JsonRpc;
+  public registryRpc: JsonRpc;
 
-           public api: Api;
-           public user?: ILoginResponse;
+  public api: Api;
+  public user?: ILoginResponse;
 
-           private signingApi: WaxSigningApi;
-           private waxActivateRequisition: WaxActivateRequisition;
+  private signingApi: WaxSigningApi;
+  private waxActivateRequisition: WaxActivateRequisition;
 
-           private readonly apiSigner: SignatureProvider;
-           private readonly waxSigningURL: string;
-           private readonly waxAutoSigningURL: string;
-           private readonly eosApiArgs: any;
-           private readonly freeBandwidth: boolean;
-           private readonly feeFallback: boolean;
-           private readonly metricURL: string;
-           private readonly returnTempAccounts: boolean;
-           private readonly activationEndpoint: string;
+  private readonly apiSigner: SignatureProvider;
+  private readonly waxSigningURL: string;
+  private readonly waxAutoSigningURL: string;
+  private readonly eosApiArgs: any;
+  private readonly freeBandwidth: boolean;
+  private readonly feeFallback: boolean;
+  private readonly metricURL: string;
+  private readonly returnTempAccounts: boolean;
+  private readonly activationEndpoint: string;
+  private chainName: string | null;
+  private chainId: string | null;
+  private lightApiEndpoint: string | null;
+  private rpcEndpoint: string | null;
+  private marketUrl: string | null;
 
            private readonly verifyTx: (
                user: ILoginResponse,
@@ -65,6 +71,21 @@ export class WaxJS {
            public get proofVerified(): boolean {
                return this.user?.isProofVerified;
            }
+  public get proof(): IProof {
+    return this.user?.proof;
+  }
+
+  public get lightApi(): string | null {
+    return this.lightApiEndpoint;
+  }
+
+  public get marketplaceApi(): string | null {
+    return this.marketUrl;
+  }
+
+  public get currentChainName(): string | null {
+    return this.chainName;
+  }
 
            constructor({
                rpcEndpoint,
@@ -83,6 +104,9 @@ export class WaxJS {
                activationEndpoint = "https://login-api.mycloudwallet.com/v1/wcw",
                relayEndpoint = "https://relay.wax.io/graphql",
                relayRegion = "us-east-2",
+    chainName = null,
+    registryEndpoint = null,
+    chainId = null
            }: {
                rpcEndpoint: string;
                userAccount?: string;
@@ -105,14 +129,24 @@ export class WaxJS {
                activationEndpoint?: string;
                relayEndpoint?: string;
                relayRegion?: string;
+    chainName?: string;
+    registryEndpoint?: string;
+    chainId?: string;
            }) {
                this.rpc = new JsonRpc(rpcEndpoint);
+    this.rpcEndpoint = rpcEndpoint;
+    this.registryRpc = new JsonRpc(registryEndpoint || rpcEndpoint);
+
+    this.chainName = chainName;
+    this.chainId = chainId;
+
                this.signingApi = new WaxSigningApi(
                    waxSigningURL,
                    waxAutoSigningURL,
                    this.rpc,
                    metricURL,
-                   returnTempAccounts
+      returnTempAccounts,
+      this.chainId
                );
                this.waxActivateRequisition = new WaxActivateRequisition(
                    activationEndpoint,
@@ -136,7 +170,7 @@ export class WaxJS {
                } else {
                    // try to auto-login via endpoint
                    if (tryAutoLogin) {
-                       this.signingApi.tryAutologin().then(async (response) => {
+                     this.signingApi.tryAutologin().then(async (response) => {
                            if (response) {
                                this.receiveLogin(await this.signingApi.login());
                            }
@@ -163,6 +197,49 @@ export class WaxJS {
                    this.receiveLogin(loginData);
                }
            }
+
+  public async getAvailableChains(): Promise<any[]> {
+    const response = await this.registryRpc.get_table_rows({
+      json: true,
+      code: "registry.wax",
+      scope: "registry.wax",
+      table: "chains.a"
+    });
+
+    return response.rows;
+  }
+
+  public async switchToChain(chainName: string | null): Promise<void> {
+    if (!chainName) {
+      this.rpc = this.registryRpc;
+      this.chainId = null;
+      this.chainName = null;
+      this.lightApiEndpoint = null;
+      this.marketUrl = null;
+    } else {
+      const chainInfo = await this.getChainInfoByChainName(chainName);
+
+      this.rpc = new JsonRpc(chainInfo.endpoint);
+      this.chainId = chainInfo.chain_id;
+      this.lightApiEndpoint = chainInfo.simple_asset_url;
+      this.chainName = chainName;
+      this.marketUrl = chainInfo.market_url;
+    }
+
+    console.log("switchToChain chainName", chainName);
+    console.log("switchToChain this.chainId", this.chainId);
+    console.log("switchToChain this.user", this.user);
+
+    this.signingApi = new WaxSigningApi(
+      this.waxSigningURL,
+      this.waxAutoSigningURL,
+      this.rpc,
+      this.metricURL,
+      this.returnTempAccounts
+    );
+
+    this.receiveLogin(this.user);
+  }
 
            public async isAutoLoginAvailable(): Promise<boolean> {
                if (this.user) {
@@ -224,19 +301,15 @@ export class WaxJS {
                }
                return false;
            }
-           public async waxProof(
-               nonce: string,
-               verify: boolean = true
-           ): Promise<any> {
-               if (!this.user) {
-                   throw new Error("User is not logged in");
-               }
-               const data = await this.signingApi.proofWindow(
-                   nonce,
-                   PROOF_WAX,
-                   null
-               );
-               const message = `cloudwallet-verification-${data.referer}-${nonce}-${data.accountName}`;
+  public async waxProof(nonce: string, verify: boolean = true): Promise<any> {
+    if (!this.user) {
+      throw new Error("User is not logged in");
+    }
+    const data = await this.signingApi.proofWindow(nonce, PROOF_WAX, null, this.chainId);
+    let message = `cloudwallet-verification-${data.referer}-${nonce}-${data.accountName}`;
+    if (this.chainId) {
+      message += '-' + this.chainId;
+    }
                if (!verify) {
                    return { ...data, message };
                }
@@ -250,29 +323,41 @@ export class WaxJS {
            private receiveLogin(data: ILoginResponse): void {
                this.user = data;
 
+    if (
+      data?.sideChainAccount &&
+      Object.keys(data.sideChainAccount || {}).includes(this.chainName)
+    ) {
+      const sideChainAccount = data.sideChainAccount[this.chainName];
+      this.user = {
+        ...this.user,
+        keys: [sideChainAccount.public_keys]
+      };
+    }
+
                const signatureProvider: SignatureProvider = {
                    getAvailableKeys: async () => {
                        return [
                            ...this.user.keys,
                            ...((this.apiSigner &&
                                (await this.apiSigner.getAvailableKeys())) ||
-                               []),
+                               [])
                        ];
                    },
-                   sign: async (sigArgs) => {
+      sign: async sigArgs => {
                        const originalTx = await this.api.deserializeTransactionWithActions(
                            sigArgs.serializedTransaction
                        );
 
-                       const {
-                           serializedTransaction,
-                           signatures,
-                       } = await this.signingApi.signing(
+        const {
+          serializedTransaction,
+          signatures
+        } = await this.signingApi.signing(
                            originalTx,
                            sigArgs.serializedTransaction,
                            !this.freeBandwidth,
-                           this.feeFallback
-                       );
+          this.feeFallback,
+          this.chainId
+        );
 
                        const augmentedTx = await this.api.deserializeTransactionWithActions(
                            serializedTransaction
@@ -287,18 +372,17 @@ export class WaxJS {
                            signatures: [
                                ...signatures,
                                ...((this.apiSigner &&
-                                   (await this.apiSigner.sign(sigArgs))
-                                       .signatures) ||
-                                   []),
-                           ],
+                                   (await this.apiSigner.sign(sigArgs)).signatures) ||
+                                   [])
+                           ]
                        };
-                   },
+      }
                };
 
                this.api = new Api({
                    ...this.eosApiArgs,
                    rpc: this.rpc,
-                   signatureProvider,
+      signatureProvider
                });
                const transact = this.api.transact.bind(this.api);
                // We monkeypatch the transact method to overcome timeouts
@@ -314,12 +398,25 @@ export class WaxJS {
                            namedParams
                        );
                    } else {
-                       await this.signingApi.prepareTransaction(transaction);
-                       return await transact(transaction, namedParams);
+                      await this.signingApi.prepareTransaction(transaction);
+                      return await transact(transaction, namedParams);
                    }
-               };
-           }
-       }
+    };
+  }
+
+  private async getChainInfoByChainName(chainName: string): Promise<any> {
+    const availableChains = await this.getAvailableChains();
+    const chainInfo: any | null = availableChains.find(
+      chain => chain.chain_name === chainName
+    );
+
+    if (!chainInfo) {
+      throw new Error("Chain name not found.");
+    }
+
+    return chainInfo;
+  }
+}
 
 export function defaultTxVerifier(
   user: ILoginResponse,
@@ -369,10 +466,10 @@ export function defaultTxVerifier(
               authorization: [
                 {
                   actor: "boost.wax",
-                  permission: "paybw",
-                },
+                  permission: "paybw"
+                }
               ],
-              data: {},
+              data: {}
             })
         ) {
           continue;

@@ -5,9 +5,9 @@ export const getProofWaxRequiredKeys = async (
 ): Promise<RequiredKeysResponse> => {
   const response = await fetch(`${rpcUrl}/v1/chain/get_account`, {
     body: JSON.stringify({
-      account_name: "proof.wax",
+      account_name: "proof.wax"
     }),
-    method: "POST",
+    method: "POST"
   });
 
   if (!response.ok) {
