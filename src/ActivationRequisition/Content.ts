@@ -1,26 +1,25 @@
 import * as QRCode from "qrcode-svg";
-import { RequisitionInfo } from "./index";
+import { WaxJS } from "..";
 import {
-  createScanIcon,
+  copyToClipboard,
+  createButton,
+  createCloseIcon,
+  createCopyIcon,
+  createDesktopIcon,
+  createExpiredIcon,
   createFlexDiv,
+  createLoadingSection,
+  createLogoIcon,
   createLogoImage,
   createMobileIcon,
+  createScanIcon,
   createTextWithIcon,
-  createDesktopIcon,
-  createLogoIcon,
-  createCloseIcon,
-  createInfoIcon,
-  createCopyIcon,
-  createButton,
-  createExpiredIcon,
-  createLoadingSection,
-  copyToClipboard,
 } from "../helpers";
-import { WaxJS } from "..";
+import { IRequisitionInfo } from "./index";
 
 export class Content {
   public static async createContent(
-    requisitionInfo: RequisitionInfo,
+    requisitionInfo: IRequisitionInfo,
     waxObj: WaxJS
   ): Promise<HTMLDivElement> {
     console.log("requisitionInfo", requisitionInfo);
@@ -186,7 +185,7 @@ export class Content {
     return button;
   }
 
-  private static async createMobileContainer(requisitionInfo: RequisitionInfo) {
+  private static async createMobileContainer(requisitionInfo: IRequisitionInfo) {
     const container = createFlexDiv("column", "8px");
     container.id = "activation-mobile-section";
     container.style.display = "flex";

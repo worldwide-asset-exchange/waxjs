@@ -1,12 +1,12 @@
 /** @format */
 
+import { GraphQLSubscription } from "@aws-amplify/api";
+import { Amplify, API, graphqlOperation } from "aws-amplify";
+import { v4 as uuidv4 } from "uuid";
 import { WaxJS } from "..";
-import { IDappInfo, ILoginResponse, IWhitelistedContract } from "../interfaces";
+import { IDappInfo, ILoginResponse } from "../interfaces";
 import { ModalOpener } from "./../Modal/ModalOpener";
 import { Content } from "./Content";
-import { API, Amplify, graphqlOperation } from "aws-amplify";
-import { GraphQLSubscription } from "@aws-amplify/api";
-import { v4 as uuidv4 } from "uuid";
 
 // export const LS_ACTIVATION_KEY = 'dapp_activated';
 
@@ -26,21 +26,21 @@ const publish2channel = /* GraphQL */ `
     }
 `;
 
-type Subscribe2channelSubscription = {
+interface ISubscribe2channelSubscription {
     subscribe2channel?: {
         __typename: "Channel";
         data: string;
         name: string;
     } | null;
-};
+}
 
-export interface RequisitionInfo {
+export interface IRequisitionInfo {
     code: string;
     qrCodeContent: string;
     expire: number;
 }
 
-interface ActivatedData {
+interface IActivatedData {
     account: string;
     keys: string[];
     isTemp?: boolean;
@@ -52,7 +52,7 @@ interface ActivatedData {
     userAccount?: string;
 }
 
-export interface TransactionMessage {
+export interface ITransactionMessage {
     id: string;
     type:
         | "requesting"
@@ -113,14 +113,15 @@ export class WaxActivateRequisition {
         this.user = null;
     }
 
-    public async openModal(dAppInfo: IDappInfo) {
-        const requisitionInfo: RequisitionInfo = await this.fetchActivationInfo(
+    public async openModal(dAppInfo: IDappInfo, nonce?: string) {
+        const requisitionInfo: IRequisitionInfo = await this.fetchActivationInfo(
             {
+                dapp: dAppInfo.name,
                 origin: document.location.host,
-                dAppName: dAppInfo.name,
                 logourl: dAppInfo.logoUrl,
-                schema: dAppInfo.schema,
                 description: dAppInfo.description,
+                schema: dAppInfo.schema,
+                nonce,
             }
         );
         this.content = await Content.createContent(
@@ -129,14 +130,14 @@ export class WaxActivateRequisition {
         );
         this.modalOpener = new ModalOpener(this.content);
         this.modalOpener.openModal();
-        return this.checkActivation(requisitionInfo, dAppInfo);
+        return this.checkActivation(requisitionInfo, dAppInfo, nonce);
     }
 
     public async signTransaction(transaction: any, namedParams: any) {
         console.log("signTransaction::", { transaction, namedParams });
         const { token } = this.user;
         const channelName = `tx_dapp_noti_${this.user.account}`;
-        const txInfo: TransactionMessage = {
+        const txInfo: ITransactionMessage = {
             id: uuidv4(),
             type: "requesting",
             actions: transaction,
@@ -174,7 +175,7 @@ export class WaxActivateRequisition {
                 }
             }
         `;
-                //Subscribe via WebSockets
+                // Subscribe via WebSockets
                 const graphqlOption = graphqlOperation(
                     query,
                     {
@@ -189,10 +190,10 @@ export class WaxActivateRequisition {
                 );
 
                 subscription = API.graphql<
-                    GraphQLSubscription<Subscribe2channelSubscription>
+                    GraphQLSubscription<ISubscribe2channelSubscription>
                 >(graphqlOption).subscribe({
                     next: ({ provider: _, value }) => {
-                        const txRes: TransactionMessage = JSON.parse(
+                        const txRes: ITransactionMessage = JSON.parse(
                             value.data.subscribe2channel.data
                         );
                         if (txRes.id !== currentTxInfo.id) {
@@ -240,15 +241,15 @@ export class WaxActivateRequisition {
         });
     }
 
-    private async updateModal(dAppInfo: IDappInfo) {
-      const requisitionInfo: RequisitionInfo = await this.fetchActivationInfo({
-              origin: document.location.host,
-              dAppName: dAppInfo.name,
-              logourl: dAppInfo.logoUrl,
-              schema: dAppInfo.schema,
-              description: dAppInfo.description,
-            }
-        );
+    private async updateModal(dAppInfo: IDappInfo, nonce?: string) {
+        const requisitionInfo: IRequisitionInfo = await this.fetchActivationInfo({
+            dapp: dAppInfo.name,
+            origin: document.location.host,
+            logourl: dAppInfo.logoUrl,
+            description: dAppInfo.description,
+            schema: dAppInfo.schema,
+            nonce,
+        });
         this.content = await Content.createContent(
             requisitionInfo,
             this.waxObj
@@ -277,7 +278,7 @@ export class WaxActivateRequisition {
         }, 2000);
     }
 
-    private async checkActivation(requisitionInfo: RequisitionInfo, dAppInfo: IDappInfo) {
+    private async checkActivation(requisitionInfo: IRequisitionInfo, dAppInfo: IDappInfo, nonce?: string) {
         try {
             const activatedData = await this.checkIfActivated(
                 requisitionInfo,
@@ -311,7 +312,7 @@ export class WaxActivateRequisition {
 
                 if (regenerateButton) {
                     regenerateButton.addEventListener("click", async () => {
-                        await this.updateModal(dAppInfo);
+                        await this.updateModal(dAppInfo, nonce);
                     });
                 }
             } else {
@@ -321,18 +322,20 @@ export class WaxActivateRequisition {
     }
 
     private async fetchActivationInfo({
+        dapp,
         origin,
-        dAppName,
         logourl,
-        schema,
         description,
+        schema,
+        nonce,
     }: {
+        dapp: string;
         origin: string;
-        dAppName: string;
         logourl?: string;
-        schema?: string;
         description?: string;
-    }): Promise<RequisitionInfo> {
+        schema?: string;
+        nonce?: string;
+    }): Promise<IRequisitionInfo> {
         try {
             const response = await fetch(
                 `${this.activationEndpoint}/dapp/code`,
@@ -342,12 +345,12 @@ export class WaxActivateRequisition {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        dapp: origin,
-                        dAppName: dAppName,
-                        logourl,
-                        schema,
-                        description,
+                        dapp,
                         origin,
+                        logourl,
+                        description,
+                        schema,
+                        nonce,
                     }),
                 }
             );
@@ -367,10 +370,10 @@ export class WaxActivateRequisition {
     }
 
     private async checkIfActivated(
-        requisitionInfo: RequisitionInfo,
+        requisitionInfo: IRequisitionInfo,
         origin
-    ): Promise<ActivatedData> {
-        return new Promise<ActivatedData>((resolve, reject) => {
+    ): Promise<IActivatedData> {
+        return new Promise<IActivatedData>((resolve, reject) => {
             const intervalId = setInterval(async () => {
                 const currentTimestamp = Math.floor(Date.now() / 1000);
 

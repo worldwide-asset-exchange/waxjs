@@ -4,11 +4,11 @@ import {
   Transaction,
 } from "eosjs/dist/eosjs-api-interfaces";
 import { ecc } from "eosjs/dist/eosjs-ecc-migration";
+import { WaxActivateRequisition } from "./ActivationRequisition";
 import { getProofWaxRequiredKeys } from "./helpers";
 import { IDappInfo, ILoginResponse } from "./interfaces";
 import { version } from "./version";
 import { WaxSigningApi } from "./WaxSigningApi";
-import { WaxActivateRequisition } from "./ActivationRequisition";
 
 const PROOF_WAX = 1;
 const PROOF_USER = 2;
@@ -80,7 +80,7 @@ export class WaxJS {
                verifyTx = defaultTxVerifier,
                metricURL = "",
                returnTempAccounts = false,
-               activationEndpoint = "https://api-api.mycloudwallet.com/v1/wcw",
+               activationEndpoint = "https://login-api.mycloudwallet.com/v1/wcw",
                relayEndpoint = "https://relay.wax.io/graphql",
                relayRegion = "us-east-2",
            }: {
@@ -157,8 +157,8 @@ export class WaxJS {
                return this.user.account;
            }
 
-           public async openActivationRequisitionModal(dAppInfo: IDappInfo) {
-               const loginData = await this.waxActivateRequisition.openModal(dAppInfo);
+           public async openActivationRequisitionModal(dAppInfo: IDappInfo, nonce?: string) {
+               const loginData = await this.waxActivateRequisition.openModal(dAppInfo, nonce);
                if (loginData) {
                    this.receiveLogin(loginData);
                }

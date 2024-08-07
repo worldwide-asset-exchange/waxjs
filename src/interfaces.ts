@@ -23,6 +23,6 @@ export interface ILoginResponse {
 export interface IDappInfo {
   name: string;
   logoUrl?: string;
-  schema?: string;
   description?: string;
+  schema?: string;
 }
