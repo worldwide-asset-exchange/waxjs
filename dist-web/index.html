@@ -19,8 +19,9 @@
 
 <button id="login" onclick=login() >WAX Login</button><br><br>
 <hr>
-<label>updater:</label><input id="updater"><br><br>
-<label>message:</label><input id="message"><br><br>
+<label>version:</label> <span id="version"></span><br><br>
+<label>updater:</label> <input id="updater"><br><br>
+<label>message:</label> <input id="message"><br><br>
 <label>fail:</label><input type="checkbox" id="fail" value="fail"><br><br>
 <button id="sign" onclick=sign() >Sign transaction</button><br><br>
 <label>Current Message</label><h3 id="current"></h3><br><br>
@@ -28,29 +29,27 @@
 <button id="proof" onclick=proof() >Proof</button><br><br>
 <hr>
 <label>Transaction Results</label>
-<h2 id="response"></h2>
+<pre><h2 id="response"></h2></pre>
 
 <script>
   const wax = new waxjs.WaxJS({
     rpcEndpoint: 'https://wax.greymass.com',
-    chainId: '1064487b3cd1a897ce03ae5b6a865651747e2e152090f99c1d19d44e01aea5a4'
+    tryAutoLogin: false,
   });
-  // const wax = new waxjs.WaxJS({
-  //   rpcEndpoint: 'http://wax-all.test:8888',
-  //   tryAutoLogin: true,
-  //   waxSigningURL: 'http://all-access.wax.test:8113',
-  //   waxAutoSigningURL: 'http://idm.wax.test:8113/v1/accounts/auto-accept/'
-  // });
+
+  document.getElementById('version').innerHTML = wax.version;
 
   async function login() {
     try {
-      const userAccount = await wax.login('noncerandom');
+      wax.logout();
+      const nonce = Math.random().toString(36).substring(2);
+      const userAccount = await wax.login(nonce);
       document.getElementById('updater').value = userAccount;
       await getCurrentMessage();
       if (wax.user.isProofVerified) {
-        document.getElementById('response').append(' User login proof is valid');
+        document.getElementById('response').append('User login proof is valid\n');
       } else {
-        document.getElementById('response').append(' User login proof is invalid');
+        document.getElementById('response').append('User login proof is invalid\n');
       }
     } catch(e) {
       document.getElementById('response').append(e.message);
@@ -59,7 +58,7 @@
 
   async function sign() {
     if(!wax.api) {
-      return document.getElementById('response').append('* Login first *');
+      return document.getElementById('response').append('* Login first *\n');
     }
 
     const updater = document.getElementById('updater').value;
@@ -85,11 +84,11 @@
         blocksBehind: 3,
         expireSeconds: 30
       });
-      document.getElementById('response').append(JSON.stringify(result));
+      document.getElementById('response').append(JSON.stringify(result) + '\n');
       await new Promise(resolve => setTimeout(resolve, 1000));
       await getCurrentMessage();
     } catch(e) {
-      document.getElementById('response').append(e.message);
+      document.getElementById('response').append(e.message + '\n');
     }
   }
 
@@ -109,14 +108,15 @@
 
   async function proof() {
     try {
-      const verifyResult = await wax.waxProof('abc', true);
+      const nonce = Math.random().toString(36).substring(2);
+      const verifyResult = await wax.waxProof(nonce, true);
       if (verifyResult) {
-        document.getElementById('response').append(' Proof is valid');
+        document.getElementById('response').append('Proof is valid\n');
       } else {
-        document.getElementById('response').append(' Proof is invalid');
+        document.getElementById('response').append('Proof is invalid\n');
       }
     } catch(e) {
-      document.getElementById('response').append(e.message);
+      document.getElementById('response').append(e.message + '\n');
     }
   }
 
