@@ -247,7 +247,7 @@ export class Content {
       (requisitionInfo.expire * 1000 - Date.now()) / (1000 * 60)
     );
     const expirationText = createFlexDiv("row");
-    expirationText.textContent = `QR code will be expired in ${expiration} mins`;
+    expirationText.textContent = `This QR code will expire in ${expiration} minutes`;
     expirationText.style.color = "#7A7A7A";
     expirationText.style.fontWeight = "600";
     expirationText.style.justifyContent = "center";
