@@ -243,7 +243,7 @@ export class WaxActivateRequisition {
     });
     this.content = await Content.createContent(requisitionInfo, this.waxObj);
     this.modalOpener.updateContent(this.content);
-    this.checkActivation(requisitionInfo, dAppInfo);
+    this.checkActivation(requisitionInfo, dAppInfo, nonce);
   }
 
   private async updateActivationContent() {
