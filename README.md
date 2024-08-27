@@ -146,7 +146,7 @@ For example:
 
 ### Identify user with temporary account (no blockchain account)
 
-After the wax.login() call you can check if an account is temporary using wax.isTemp(), remember this will only ever can be true if allowTemporaryAccounts is set to true, or else waxjs will never return temporary accounts.
+After the wax.login() call you can check if an account is temporary checking the boolean value of wax.isTemp. Remember this will only ever can be true if allowTemporaryAccounts is set to true, or else waxjs will never return temporary accounts.
 
 ### Create blockchain account on behalf of the user
 
