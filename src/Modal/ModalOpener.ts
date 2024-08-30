@@ -7,6 +7,33 @@ export class ModalOpener {
     this.initModal();
   }
 
+  public openModal(): void {
+    if (this.modalElement) {
+      this.modalElement.style.display = "block";
+    }
+  }
+
+  public closeModal(): void {
+    if (this.modalElement) {
+      this.modalElement.style.display = "none";
+    }
+  }
+
+  public updateContent(newContent: HTMLElement): void {
+    // Remove existing content
+    if (this.modalElement && this.content) {
+      this.modalElement.removeChild(this.content);
+    }
+
+    // Update content reference
+    this.content = newContent;
+
+    // Append the new content container to the modal
+    if (this.modalElement) {
+      this.modalElement.appendChild(this.content);
+    }
+  }
+
   public initModal() {
     // Create the modal container
     this.modalElement = document.createElement("div");
@@ -58,33 +85,6 @@ export class ModalOpener {
     // Check if the click target is the modal overlay itself (not its children)
     if (event.target === this.modalElement) {
       this.closeModal();
-    }
-  }
-
-  public openModal(): void {
-    if (this.modalElement) {
-      this.modalElement.style.display = "block";
-    }
-  }
-
-  public closeModal(): void {
-    if (this.modalElement) {
-      this.modalElement.style.display = "none";
-    }
-  }
-
-  public updateContent(newContent: HTMLElement): void {
-    // Remove existing content
-    if (this.modalElement && this.content) {
-      this.modalElement.removeChild(this.content);
-    }
-
-    // Update content reference
-    this.content = newContent;
-
-    // Append the new content container to the modal
-    if (this.modalElement) {
-      this.modalElement.appendChild(this.content);
     }
   }
 }
