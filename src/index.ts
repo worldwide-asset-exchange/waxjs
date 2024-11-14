@@ -4,8 +4,9 @@ import {
   Transaction
 } from "eosjs/dist/eosjs-api-interfaces";
 import { ecc } from "eosjs/dist/eosjs-ecc-migration";
+import { WaxActivateRequisition } from "./ActivationRequisition";
 import { getProofWaxRequiredKeys } from "./helpers";
-import { ILoginResponse, IProof } from "./interfaces";
+import { IDappInfo, ILoginResponse, IProof } from "./interfaces";
 import { version } from "./version";
 import { WaxSigningApi } from "./WaxSigningApi";
 
@@ -19,6 +20,7 @@ export class WaxJS {
   public user?: ILoginResponse;
 
   private signingApi: WaxSigningApi;
+  private waxActivateRequisition: WaxActivateRequisition;
 
   private readonly apiSigner: SignatureProvider;
   private readonly waxSigningURL: string;
@@ -28,6 +30,7 @@ export class WaxJS {
   private readonly feeFallback: boolean;
   private readonly metricURL: string;
   private readonly returnTempAccounts: boolean;
+  private readonly activationEndpoint: string;
   private chainName: string | null;
   private chainId: string | null;
   private lightApiEndpoint: string | null;
@@ -98,6 +101,9 @@ export class WaxJS {
     verifyTx = defaultTxVerifier,
     metricURL = "",
     returnTempAccounts = false,
+    activationEndpoint = "https://login-api.mycloudwallet.com/v1/wcw",
+    relayEndpoint = "https://relay.wax.io/graphql",
+    relayRegion = "us-east-2",
     chainName = null,
     registryEndpoint = null,
     chainId = null
@@ -120,6 +126,9 @@ export class WaxJS {
     ) => void;
     metricURL?: string;
     returnTempAccounts?: boolean;
+    activationEndpoint?: string;
+    relayEndpoint?: string;
+    relayRegion?: string;
     chainName?: string;
     registryEndpoint?: string;
     chainId?: string;
@@ -139,6 +148,12 @@ export class WaxJS {
       returnTempAccounts,
       this.chainId
     );
+    this.waxActivateRequisition = new WaxActivateRequisition(
+      activationEndpoint,
+      this,
+      relayEndpoint,
+      relayRegion
+    );
     this.waxSigningURL = waxSigningURL;
     this.waxAutoSigningURL = waxAutoSigningURL;
     this.apiSigner = apiSigner;
@@ -148,6 +163,7 @@ export class WaxJS {
     this.metricURL = metricURL;
     this.verifyTx = verifyTx;
     this.returnTempAccounts = returnTempAccounts;
+    this.activationEndpoint = activationEndpoint;
     if (userAccount && Array.isArray(pubKeys)) {
       // login from constructor
       this.receiveLogin({ account: userAccount, keys: pubKeys });
@@ -169,6 +185,23 @@ export class WaxJS {
     }
 
     return this.user.account;
+  }
+
+  public async activateRequisition(nonce?: string): Promise<string> {
+    return this.user.account;
+  }
+
+  public async openActivationRequisitionModal(
+    dAppInfo: IDappInfo,
+    nonce?: string
+  ) {
+    const loginData = await this.waxActivateRequisition.openModal(
+      dAppInfo,
+      nonce
+    );
+    if (loginData) {
+      this.receiveLogin(loginData);
+    }
   }
 
   public async getAvailableChains(): Promise<any[]> {
@@ -229,7 +262,21 @@ export class WaxJS {
     this.user = null;
     this.api = null;
     if (this.signingApi) {
-      this.signingApi.logout();
+      if (this.user?.token) {
+        const myHeaders = new Headers();
+        myHeaders.append("Authorization", `Bearer ${this.user.token}`);
+
+        fetch(`${this.activationEndpoint}/dapp/logout`, {
+          method: "DELETE",
+          headers: myHeaders,
+          redirect: "follow"
+        })
+          .then(response => response.text())
+          .then(result => console.log(result))
+          .catch(error => console.error(error));
+      } else {
+        this.signingApi.logout();
+      }
     }
   }
 
@@ -257,15 +304,19 @@ export class WaxJS {
     }
     return false;
   }
-
   public async waxProof(nonce: string, verify: boolean = true): Promise<any> {
     if (!this.user) {
       throw new Error("User is not logged in");
     }
-    const data = await this.signingApi.proofWindow(nonce, PROOF_WAX, null, this.chainId);
+    const data = await this.signingApi.proofWindow(
+      nonce,
+      PROOF_WAX,
+      null,
+      this.chainId
+    );
     let message = `cloudwallet-verification-${data.referer}-${nonce}-${data.accountName}`;
     if (this.chainId) {
-      message += '-' + this.chainId;
+      message += "-" + this.chainId;
     }
     if (!verify) {
       return { ...data, message };
@@ -346,10 +397,17 @@ export class WaxJS {
     // By pre-creating the pop-up window we will interact with,
     // we ensure that it is not going to be rejected due to a delayed
     // pop up that would otherwise occur post transaction creation
+    const _this = this;
     this.api.transact = async (transaction, namedParams) => {
-      await this.signingApi.prepareTransaction(transaction);
-
-      return await transact(transaction, namedParams);
+      if (this.user?.token) {
+        return await _this.waxActivateRequisition.signTransaction(
+          transaction,
+          namedParams
+        );
+      } else {
+        await this.signingApi.prepareTransaction(transaction);
+        return await transact(transaction, namedParams);
+      }
     };
   }
 

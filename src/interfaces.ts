@@ -33,4 +33,12 @@ export interface ILoginResponse {
   isProofVerified?: any;
   sideChainAccount?: Record<string, IAccountInfo>;
   proof?: IProof;
+  token?: string;
+}
+
+export interface IDappInfo {
+  name: string;
+  logoUrl?: string;
+  description?: string;
+  schema?: string;
 }
