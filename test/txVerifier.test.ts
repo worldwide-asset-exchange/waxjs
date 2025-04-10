@@ -585,4 +585,398 @@ describe("test default tx verifier", function() {
       "Augmented transaction actions has an extra action from the original authorizing the user.\nOriginal"
     );
   });
+
+  it("Should allow if augmentedTx includes valid action fee with matching contract:action pairs", async () => {
+    const user = {
+      account: "user1.wam",
+      keys: []
+    };
+    const originalTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        },
+        {
+          account: "atomicassets",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            asset_ids: ["123456"],
+            memo: "NFT transfer"
+          }
+        }
+      ]
+    };
+
+    const augmentedTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "txfee.wax",
+            quantity: "0.05000000 WAX",
+            memo: "Wallet action fee for eosio.token:transfer | atomicassets:transfer"
+          }
+        },
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        },
+        {
+          account: "atomicassets",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            asset_ids: ["123456"],
+            memo: "NFT transfer"
+          }
+        }
+      ]
+    };
+    await expect(function() {
+      defaultTxVerifier(user, originalTx, augmentedTx);
+    }).not.to.throw();
+  });
+
+  it("Should not allow if augmentedTx includes action fee with non-matching contract:action pairs", async () => {
+    const user = {
+      account: "user1.wam",
+      keys: []
+    };
+    const originalTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        }
+      ]
+    };
+
+    const augmentedTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "txfee.wax",
+            quantity: "0.05000000 WAX",
+            memo: "Wallet action fee for eosio.token:transfer | atomicassets:transfer"
+          }
+        },
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        }
+      ]
+    };
+    await expect(function() {
+      defaultTxVerifier(user, originalTx, augmentedTx);
+    }).to.throw(
+      "Wallet action fee contains contract:action pairs that don't exist in the original transaction"
+    );
+  });
+
+  it("Should handle whitespace variations in the action fee memo format", async () => {
+    const user = {
+      account: "user1.wam",
+      keys: []
+    };
+    const originalTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        },
+        {
+          account: "atomicassets",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            asset_ids: ["123456"],
+            memo: "NFT transfer"
+          }
+        }
+      ]
+    };
+
+    const augmentedTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "txfee.wax",
+            quantity: "0.05000000 WAX",
+            memo: "Wallet action fee for  eosio.token:transfer  |  atomicassets:transfer  "
+          }
+        },
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        },
+        {
+          account: "atomicassets",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            asset_ids: ["123456"],
+            memo: "NFT transfer"
+          }
+        }
+      ]
+    };
+    await expect(function() {
+      defaultTxVerifier(user, originalTx, augmentedTx);
+    }).not.to.throw();
+  });
+
+  it("Should allow transaction with both bandwidth fee and action fee", async () => {
+    const user = {
+      account: "user1.wam",
+      keys: []
+    };
+    const originalTx = {
+      actions: [
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        },
+        {
+          account: "atomicassets",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            asset_ids: ["123456"],
+            memo: "NFT transfer"
+          }
+        }
+      ]
+    };
+
+    const augmentedTx = {
+      actions: [
+        {
+          account: "boost.wax",
+          name: "noop",
+          authorization: [
+            {
+              actor: "boost.wax",
+              permission: "paybw"
+            }
+          ],
+          data: {}
+        },
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "txfee.wax",
+            quantity: "0.01000000 WAX",
+            memo: "WAX fee for 10 us CPU and 10 words NET"
+          }
+        },
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "txfee.wax",
+            quantity: "0.05000000 WAX",
+            memo: "Wallet action fee for eosio.token:transfer | atomicassets:transfer"
+          }
+        },
+        {
+          account: "eosio.token",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            to: "user2.wam",
+            quantity: "1.00000000 WAX",
+            memo: "test"
+          }
+        },
+        {
+          account: "atomicassets",
+          name: "transfer",
+          authorization: [
+            {
+              actor: user.account,
+              permission: "active"
+            }
+          ],
+          data: {
+            from: user.account,
+            
+            to: "user2.wam",
+            asset_ids: ["123456"],
+            memo: "NFT transfer"
+          }
+        }
+      ]
+    };
+    await expect(function() {
+      defaultTxVerifier(user, originalTx, augmentedTx);
+    }).not.to.throw();
+  });
 });

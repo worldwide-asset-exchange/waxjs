@@ -405,6 +405,8 @@ export function defaultTxVerifier(
         extraAction.name === "transfer"
       ) {
         const noopAction = augmentedActions[0];
+        
+        // If it's a "WAX fee for" transfer (bandwidth payment), it must come with noop action
         if (
           extraAction.data.to === "txfee.wax" &&
           extraAction.data.memo.startsWith("WAX fee for ") &&
@@ -422,6 +424,46 @@ export function defaultTxVerifier(
             })
         ) {
           continue;
+        }
+        
+        // If it's a "Wallet action fee for" transfer (action fee), validate the contract:action pairs
+        if (
+          extraAction.data.to === "txfee.wax" &&
+          extraAction.data.memo.startsWith("Wallet action fee for ")
+        ) {
+          // Extract the contract:action pairs from the memo
+          const memoPrefix = "Wallet action fee for ";
+          const contractActionList = extraAction.data.memo
+            .substring(memoPrefix.length)
+            .split(" | ")
+            .map(item => item.trim())
+            .filter(item => item.length > 0);
+
+          // Check if all contract:action pairs in the memo exist in the original transaction
+          const allPairsExist = contractActionList.every(contractAction => {
+            // Parse the contract and action names
+            const [contract, action] = contractAction.split(":");
+            if (!contract || !action) {
+              return false;
+            }
+            
+            // Check if this contract:action pair exists in the original transaction
+            return originalActions.some(
+              origAction => origAction.account === contract && origAction.name === action
+            );
+          });
+
+          if (allPairsExist) {
+            continue;
+          } else {
+            throw new Error(
+              `Wallet action fee contains contract:action pairs that don't exist in the original transaction.\nMemo contract actions: ${contractActionList.join(", ")}\nOriginal actions: ${JSON.stringify(
+                originalActions.map(a => `${a.account}:${a.name}`),
+                undefined,
+                2
+              )}`
+            );
+          }
         }
       }
 
