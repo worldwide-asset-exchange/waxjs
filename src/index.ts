@@ -436,11 +436,11 @@ export function defaultTxVerifier(
           const contractActionList = extraAction.data.memo
             .substring(memoPrefix.length)
             .split(" | ")
-            .map(item => item.trim())
-            .filter(item => item.length > 0);
+            .map((item: string) => item.trim())
+            .filter((item: string) => item.length > 0);
 
           // Check if all contract:action pairs in the memo exist in the original transaction
-          const allPairsExist = contractActionList.every(contractAction => {
+          const allPairsExist = contractActionList.every((contractAction: string) => {
             // Parse the contract and action names
             const [contract, action] = contractAction.split(":");
             if (!contract || !action) {
