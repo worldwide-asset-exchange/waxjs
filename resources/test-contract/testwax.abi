@@ -1,0 +1,213 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.2",
+    "types": [],
+    "structs": [
+        {
+            "name": "calllog",
+            "base": "",
+            "fields": [
+                {
+                    "name": "logger",
+                    "type": "name"
+                },
+                {
+                    "name": "message",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "log",
+            "base": "",
+            "fields": [
+                {
+                    "name": "message",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "loop",
+            "base": "",
+            "fields": [
+                {
+                    "name": "looper",
+                    "type": "name"
+                },
+                {
+                    "name": "count",
+                    "type": "int64"
+                }
+            ]
+        },
+        {
+            "name": "messages",
+            "base": "",
+            "fields": [
+                {
+                    "name": "updater",
+                    "type": "name"
+                },
+                {
+                    "name": "message",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "mine",
+            "base": "",
+            "fields": [
+                {
+                    "name": "miner",
+                    "type": "name"
+                },
+                {
+                    "name": "nonce",
+                    "type": "uint64"
+                },
+                {
+                    "name": "notify",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "ramblast",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "message",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "releaseram",
+            "base": "",
+            "fields": [
+                {
+                    "name": "caller",
+                    "type": "name"
+                },
+                {
+                    "name": "count",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "setbag",
+            "base": "",
+            "fields": [
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "items",
+                    "type": "uint64[]"
+                }
+            ]
+        },
+        {
+            "name": "update",
+            "base": "",
+            "fields": [
+                {
+                    "name": "updater",
+                    "type": "name"
+                },
+                {
+                    "name": "message",
+                    "type": "string"
+                },
+                {
+                    "name": "fail",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "useram",
+            "base": "",
+            "fields": [
+                {
+                    "name": "caller",
+                    "type": "name"
+                },
+                {
+                    "name": "count",
+                    "type": "uint64"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "calllog",
+            "type": "calllog",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "log",
+            "type": "log",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "loop",
+            "type": "loop",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "mine",
+            "type": "mine",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "releaseram",
+            "type": "releaseram",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setbag",
+            "type": "setbag",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "update",
+            "type": "update",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "useram",
+            "type": "useram",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "messages",
+            "type": "messages",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "ramblast",
+            "type": "ramblast",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "kv_tables": {},
+    "ricardian_clauses": [],
+    "variants": [],
+    "action_results": []
+}

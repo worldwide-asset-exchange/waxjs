@@ -14,6 +14,10 @@ CONTRACT testwax : public contract {
     ACTION useram(name caller, uint64_t count);
     ACTION releaseram(name caller, uint64_t count);
 
+    // test m.federation contract action
+    ACTION mine(name miner, uint64_t nonce, name notify);
+    ACTION setbag(name account, vector<uint64_t> items);
+
   private:
     void _update(name updater, string message, bool fail);
 
