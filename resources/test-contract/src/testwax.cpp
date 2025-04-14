@@ -60,4 +60,21 @@ ACTION testwax::releaseram(name caller, uint64_t count) {
   }
 }
 
+ACTION testwax::mine(name miner, uint64_t nonce, name notify) {
+  for (int64_t i = 0; i < 10; i++) {
+    _update(miner, string("loop" + std::to_string(i)), false);
+  }
+}
+
+ACTION testwax::setbag(name account, vector<uint64_t> items) {
+  ramblast_table _ramblast(get_self(), account.value);
+  for (uint64_t i = 0; i < 3; i++) {
+    auto itr = _ramblast.begin();
+    if(itr == _ramblast.end()) {
+      break;
+    }
+    _ramblast.erase(itr);
+  }
+}
+
 EOSIO_DISPATCH(testwax, (update) (loop) (log) (calllog) (useram) (releaseram));
