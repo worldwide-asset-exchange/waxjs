@@ -185,19 +185,29 @@ To do this just call `wax.logout()` that will be enough.
 
 ## Proof System
 
-Sometimes it is important to verify that the current logged in user is legitimate.
+Purpose of proof system is to verify that blockchain account of the current logged in user is legitimate. Mostly it is used to verify that blockchain account name (which is not created in blockchain) is belong to current logged in user.
 
-We do this by checking the that the current session belongs to the user account that you have in your dapp.
+Wallet do that by provide cryptographic signature under message format:
 
-There are two ways to check this using `waxProof(nonce,verify = true)` Function and `userAccountProof(nonce,description,verify = true)`
+```javascript
+`cloudwallet-verification-${referer}-${nonce}-${accountName}`;
+```
 
-Both of these functions will need a nonce, which is a string that you generate on your side and send it to be signed.
+If `chainId` is specified when init WaxJs object, it will be included in signining message:
 
-An extra parameter called description is needed for `userAccountProof` but not used right now.
+```javascript
+`cloudwallet-verification-${referer}-${nonce}-${accountName}-${chainId}`;
+```
 
-the `verify` boolean will tell the functions if you want waxjs to do the verification.
+Key use to sign is active key of `proof.wax` account. You can get that key by using helper function [getProofWaxRequiredKeys](./src/helpers.ts#L3)
 
-If `verify` is `true` then the waxjs library will do the verification and the functions will return a boolean either true of false to indicate if the verfication process succeeded.
+Waxjs support function `waxProof(nonce,verify = true)` to do that.
+
+- `nonce` is a string that you generate on your side and will be included to signing message as format above.
+
+- `verify` boolean will tell the functions if you want waxjs to do the verification. Default is `true`.
+
+If `verify` is `true` then the waxjs library will verify that returned signature is valid and signed with active key of `proof.wax` account. The function will return a boolean either true of false to indicate if the verfication process succeeded.
 
 If `verify` is `false` the library will then return the following verification object
 
@@ -212,9 +222,7 @@ If `verify` is `false` the library will then return the following verification o
 ```
 you can then use this structure if you want to do this verification in the backend.
 
-`signature` is the signature that was signed using the private key. `accountName` is the account name we have on our record. the `message` is the message that was actually signed.
-
-**The message is different for both the functions. the `userAccountVerify` will sign whatever nonce you send so the message will contain only the nonce, where as `waxProof` will contain a combined message as shown above.**
+`signature` is the signature that was signed using the `proof.wax` active private key. `accountName` is the account name we have on our record. the `message` is the message that was actually signed.
 
 ### Usage
 
@@ -222,32 +230,62 @@ you can then use this structure if you want to do this verification in the backe
 wax.waxProof("hello world",true)
 ```
 
+### Manual verification of signature.
+```javascript
+import * as ecc from 'eosjs-ecc';
+
+async function verifyProof() {
+  let verifyObj = await wax.waxProof("hello world", false);
+  let proofWaxActivePublicKey=await getProofWaxRequiredKeys(this.rpc.endpoint)
+  const isValidSignature = ecc.verify(verifyObj.signature, verifyObj.message, proofWaxActivePublicKey);
+  if (isValidSignature) {
+    alert('User authenticated');
+  } else {
+    alert('User unauthenticated');
+  }
+}
 ```
-wax.userAccountProof("hello world","",true);
+
+## Sign message
+
+This feature use to prove that blockchain account belong to current logged in user. DAPP can verify that by request user to sign abitrary message using their blockchain account active key.
+
+Waxjs support function `userAccountProof(nonce: string, description: string, verify: boolean = true)` to do that.
+
+- `nonce`: message to sign, specify by DAAP
+- `description`: currently not used
+- `verify`: if true, WaxJS will verify that returned signature is valid and signed by active key of user blockchain account. In this case, the function will return a boolean either true or false to indicate if the verfication process succeeded.
+
+If `verify` is `false` the library will then return the following verification object:
+
+```javascript
+{
+  accountName: "3smwy.wam"
+  message: "abc"
+  signature: "SIG_K1_KWfbPdw1WqdHTt6RsqgvddhobPicaJdwtASgzLXykYVDhCyV8FePE8q7kqpHUvUcTi7TWKRn1e6ue1VgqR7Qh4MKmPE1z"
+  type: "VERIFY"
+}
+```
+
+### Usage
+
+```
+wax.userAccountProof("hello world", "decription", true);
 ```
 
 ### Manual verification of signature.
-```
+```javascript
 import * as ecc from 'eosjs-ecc';
-let verifyObj = await wax.waxProof("hello world",false);
-let proofWaxActivePublicKey="EOS5fiahVT7rWcu2V18T93WoCcJ27HF4GR7xr9sX4SQ5rMbGvEH1Y"; //active key for proof.wax
-const isValidSignature = ecc.verify(verifyObj.signature, verifyObj.message, proofWaxActivePublicKey);
-if (isValidSignature) {
-  alert('User authenticated');
-} else {
-  alert('User unauthenticated');
-}
 
-```
-
-```
-import * as ecc from 'eosjs-ecc';
-let verifyObj = wax.userAccountProof("hello world","",false);
-let userWaxActivePublicKey="EOS5aaaaaaaaaaaaa";
-const isValidSignature = ecc.verify(verifyObj.signature, verifyObj.message, userWaxActivePublicKey);
-if (isValidSignature) {
-  alert('User authenticated');
-} else {
+async function verifyProof() {
+  let verifyObj = await wax.waxProof("hello world",false);
+  // loop through user key because we don't know which one is active key of user account (another is owner key)
+  for (const key of wax.pubKeys) {
+    if (ecc.verify(data.signature, message, key)) {
+      alert('User authenticated');
+      return;
+    }
+  }
   alert('User unauthenticated');
 }
 ```
@@ -261,6 +299,29 @@ waxFee = cpu_usage_us*CPU_FEE_RATIO + net_usage_words*NET_FEE_RATIO + FEE_CONSTA
 ```
 
 By default CPU_FEE_RATIO=NET_FEE_RATIO=0.001, FEE_CONSTANT=0.01;
+
+From waxJS version 1.7.0, instead of WAXP fee for transaction, Wallet will estimate transaction and add `powerup` action to rent enough bandwidth for transaction.
+
+```json
+{
+  "account": "eosio",
+  "name": "powerup",
+  "authorization": [
+    {
+      "actor": "<user account>",
+      "permission": "active",
+    },
+  ],
+  "data": {
+    "payer": ,
+    "receiver": ,
+    "days": ,
+    "net_frac": ,
+    "cpu_frac": ,
+    "max_payment": ,
+  },
+}
+```
 
 ## Avatar
 After logging in, you can get avatar of the current user by method
