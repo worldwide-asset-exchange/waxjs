@@ -36,6 +36,10 @@
 <label>items:</label><input id="setbagItems"><br><br>
 <button id="setbag" onclick=setbag() >AlienWorld setbag</button><br><br>
 <hr>
+<label>loop account:</label><input id="loopAccount"><br><br>
+<label>loop count:</label><input id="loopCount" type="number" value="1"><br><br>
+<button id="loop" onclick=loop() >Call Loop Action</button><br><br>
+<hr>
 <button id="proof" onclick=proof() >Proof</button><br><br>
 <hr>
 <label>Transaction Results</label>
@@ -154,6 +158,40 @@
           data: {
             account,
             items,
+          },
+        }]
+      }, {
+        blocksBehind: 3,
+        expireSeconds: 30
+      });
+      document.getElementById('response').append(JSON.stringify(result));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await getCurrentMessage();
+    } catch(e) {
+      document.getElementById('response').append(e.message);
+    }
+  }
+
+  async function loop() {
+    if(!wax.api) {
+      return document.getElementById('response').append('* Login first *');
+    }
+
+    const account = document.getElementById('loopAccount').value;
+    const count = parseInt(document.getElementById('loopCount').value);
+
+    try {
+      const result = await wax.api.transact({
+        actions: [{
+          account: 'm.federation',
+          name: 'loop',
+          authorization: [{
+            actor: wax.userAccount,
+            permission: 'active',
+          }],
+          data: {
+            looper:account,
+            count,
           },
         }]
       }, {

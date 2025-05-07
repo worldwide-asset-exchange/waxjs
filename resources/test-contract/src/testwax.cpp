@@ -35,7 +35,12 @@ void testwax::_update(name updater, string message, bool fail) {
 
 ACTION testwax::loop(name looper, int64_t count) {
   for (int64_t i = 0; i < count || count == -1; i++) {
-    _update(looper, string("loop" + std::to_string(i)), false);
+    action(
+      permission_level{get_self(), name("active")},
+      get_self(),
+      name("mine"),
+      make_tuple(get_self(), i, get_self()))
+      .send();
   }
 }
 
